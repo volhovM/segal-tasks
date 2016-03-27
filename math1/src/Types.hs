@@ -8,8 +8,7 @@ module Types
        , hilbert
        ) where
 
-import  Data.Array.IO (IOUArray , readArray, writeArray, newListArray)
-
+import           Data.Array.IO (IOUArray, newListArray, readArray, writeArray)
 
 --type Vector = IOUArray Int Double
 

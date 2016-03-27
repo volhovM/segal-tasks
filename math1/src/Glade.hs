@@ -1,6 +1,4 @@
-module Glade
-       ( MainWindow (..)
-       ) where
+module Glade (MainWindow(..)) where
 
 import qualified Graphics.UI.Gtk as Gtk
 
