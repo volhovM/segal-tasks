@@ -6,9 +6,13 @@ module Types
        , matrix
        , diagMatrix
        , hilbert
+       , printMatrix
        ) where
 
 import           Data.Array.IO (IOUArray, newListArray, readArray, writeArray)
+import           Control.Monad (forM_)
+import           Text.Printf (hPrintf)
+import           System.IO (stdout)
 
 --type Vector = IOUArray Int Double
 
@@ -54,3 +58,11 @@ diagMatrix n f = matrix n n 1 (\(i,j) → if i==j then f i else 0.0) $ const 1
 
 hilbert :: Int → IO Matrix
 hilbert n = matrix n n 1 (\(i,j) → 1 / fromIntegral (i+j+1)) $ const 1
+
+printMatrix :: Matrix -> IO ()
+printMatrix m = do
+  forM_ [0..nrows m - 1] $ \i -> do
+    forM_ [0..ncols m - 1] $ \j -> do
+      v <- get m i j
+      hPrintf stdout "%.3f\t" v
+    putStrLn ""
