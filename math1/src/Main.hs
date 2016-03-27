@@ -2,15 +2,11 @@
 
 module Main where
 
-import qualified Data.Aeson   as A
-import           Data.Functor ()
-import qualified Data.Maybe   (maybe)
-
-anothershit = undefined
-someCrazyShit = anothershit
+import qualified Gauss as G
+import qualified Glade as GL
+import qualified Types as T
 
 main :: IO ()
 main = do
-    putStrLn "lol sasi"
-
-    return ()
+    putStrLn "Still not implemented, meh"
+    undefined G.main (GL.MainWindow  undefined)
