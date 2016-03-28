@@ -1,19 +1,21 @@
-{-# LANGUAGE UnicodeSyntax   #-}
-{-# LANGUAGE TypeFamilies    #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE UnicodeSyntax         #-}
 
 module Gauss
        ( main
        ) where
 
-import           Types         (SimpleMatrix (..), SolvableMatrix (..), Vector (..),
-                                diagMatrix)
+import           Types                      (SLAE (..), SolvableMatrix (..),
+                                             diagMatrix)
 
-import           Control.Monad (forM, forM_)
-import           Data.Array.IO (IOUArray, newListArray, readArray, writeArray, mapIndices)
-import           Data.List     (maximumBy)
-import           Data.Ord      (comparing)
-import           Data.Maybe    (fromJust)
+import           Control.Monad              (forM, forM_)
+import           Data.Array.IO              (IOUArray, newListArray, readArray,
+                                             writeArray)
+import           Data.List                  (maximumBy)
+import           Data.Ord                   (comparing)
+import           Numeric.LinearAlgebra.Data (asColumn, toLists, (|||))
 
 
 data GaussMatrix = GaussMatrix
@@ -25,24 +27,25 @@ data GaussMatrix = GaussMatrix
     , vals      :: IOUArray (Int, Int) Double
     }
 
-instance SolvableMatrix GaussMatrix where
-    type Elem GaussMatrix = Double
-    fromMatrix SimpleMatrix{..} =
-        GaussMatrix
-        { nrows = sSize
-        , ncols = sSize
-        , freeCols = 1
-        , rowOffset = 0
-        , colOffset = 0
-        , vals = sData
-        }
-    toMatrix = vals
+instance SolvableMatrix GaussMatrix Double where
+    fromSLAE SLAE{..} = do
+        vals <-
+            newListArray ((0, 0), (sSize - 1, sSize - 1)) $
+            concat $ toLists (sMatrix ||| asColumn sVector)
+        return
+            GaussMatrix
+            { nrows = sSize
+            , ncols = sSize
+            , freeCols = 1
+            , rowOffset = 0
+            , colOffset = 0
+            , ..
+            }
+    toSLAE = undefined -- TODO It shouldn't be hard
     rowsN = nrows
     colsM = ncols
-    solve m = fromJust <$> gauss m >>= return . getRow 0 where
-      getRow :: Int → GaussMatrix → Vector Double
-      getRow i m = Vector (ncols m-1) (mapIndices (0, ncols m-1) ((,) i) (vals m))
-
+--    solve m = fromJust <$> gauss m >>= return . getRow 0
+    solve m = undefined m -- TODO Easy
 
 getIndex :: GaussMatrix → Int → Int → (Int, Int)
 getIndex m i j = (rowOffset m + i, colOffset m + j)
@@ -160,7 +163,7 @@ matrixToList m =
 main :: IO ()
 main = do
   --a ← hilbert 3
-  a ← fromMatrix <$> diagMatrix 5 (\i → fromIntegral i + 1)
+  a ← fromSLAE $ diagMatrix 5 (\i → fromIntegral i + 1)
   r ← gauss a
   case r of
     Nothing → putStrLn "singular"

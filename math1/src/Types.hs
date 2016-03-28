@@ -1,64 +1,63 @@
-{-# LANGUAGE UnicodeSyntax         #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE UnicodeSyntax         #-}
 
 module Types
-       ( SimpleMatrix (..)
+       ( SLAE (..)
        , SolvableMatrix (..)
-       , Vector (..)
        , simpleMatrix
        , diagMatrix
        , hilbert
-       , printMatrix
+--       , printMatrix
        ) where
 
-import           Control.Monad     (forM_)
-import           Data.Array.IO     (IOUArray, newListArray, readArray)
-import           Data.Array.MArray (MArray (..))
-import           System.IO         (stdout)
-import           Text.Printf       (PrintfArg, hPrintf)
+import           Control.Monad              (forM_)
+import           Foreign.Storable           (Storable)
+import           Numeric.LinearAlgebra      (Field)
+import           Numeric.LinearAlgebra.Data (Matrix, Vector, (><), (|>))
+import           System.IO                  (stdout)
+import           Text.Printf                (PrintfArg, hPrintf)
 
-data SimpleMatrix n = SimpleMatrix
-    { sSize :: !Int
-    , sData :: IOUArray (Int, Int) n
+data SLAE f = SLAE
+    { sSize   :: Int
+    , sMatrix :: Matrix f
+    , sVector :: Vector f
     }
 
-data Vector a = Vector
-    { sLength :: !Int
-    , sValues :: IO (IOUArray Int a)
-    }
-
-class (MArray IOUArray (Elem a) IO, PrintfArg (Elem a)) => SolvableMatrix a  where
-    type Elem a :: *
-    fromMatrix  :: SimpleMatrix (Elem a) -> a
-    toMatrix    :: a -> IOUArray (Int, Int) (Elem a)
-    rowsN       :: a -> Int
-    colsM       :: a -> Int
-    solve       :: a -> IO (Vector (Elem a))
+class (Field f) => SolvableMatrix a f where
+    fromSLAE :: SLAE f -> IO a
+    toSLAE   :: a -> IO (SLAE f)
+    rowsN    :: a -> Int
+    colsM    :: a -> Int
+    solve    :: a -> IO (Vector f)
 
 simpleMatrix
-    :: (MArray IOUArray n IO)
-    => Int -> ((Int, Int) -> n) -> (Int -> n) -> IO (SimpleMatrix n)
-simpleMatrix n f f' = do
-  let ls = flip concatMap [0..n-1] $ \i -> map (f . (,) i) [0..n-1] ++ [f' i]
-  vs ← newListArray ((0,0), (n-1,n)) ls
-  return SimpleMatrix
-    { sSize     = n
-    , sData     = vs
-    }
+    :: (Storable a)
+    => Int -> ((Int, Int) -> a) -> (Int -> a) -> SLAE a
+simpleMatrix (n :: Int) f f' =
+    let sMatrixData =
+            flip concatMap [0 .. n - 1] $
+            \i ->
+                 map (f . (,) i) [0 .. n - 1]
+        sVectorData = map f' [0 .. n - 1]
+    in SLAE
+       { sSize = n
+       , sMatrix = (n >< n) sMatrixData
+       , sVector = n |> sVectorData
+       }
 
-diagMatrix :: Int -> (Int -> Double) -> IO (SimpleMatrix Double)
+diagMatrix :: Int -> (Int -> Double) -> SLAE Double
 diagMatrix n f = simpleMatrix n (\(i,j) -> if i==j then f i else 0) $ const 1
 
-hilbert :: Int -> IO (SimpleMatrix Double)
+hilbert :: Int -> SLAE Double
 hilbert n = simpleMatrix n (\(i,j) -> 1 / fromIntegral (i+j+1)) $ const 1
 
-printMatrix :: (SolvableMatrix a) => a -> IO ()
-printMatrix m =
-  forM_ [0..rowsN m - 1] $ \i -> do
-    forM_ [0..colsM m - 1] $ \j -> do
-      v <- readArray (toMatrix m) (i,j)
-      hPrintf stdout "%.3f\t" v
-    putStrLn ""
+--printMatrix :: (SolvableMatrix a) => a -> IO ()
+--printMatrix m =
+--  forM_ [0..rowsN m - 1] $ \i -> do
+--    forM_ [0..colsM m - 1] $ \j -> do
+--      hPrintf stdout "%.3f\t" $ M.getElem i j $ toSLAE m
+--    putStrLn ""
