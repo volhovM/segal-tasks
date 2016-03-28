@@ -1,10 +1,12 @@
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UnicodeSyntax   #-}
+{-# LANGUAGE TypeFamilies    #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Gauss
        ( main
        ) where
 
-import           Types         (SimpleMatrix (..), SolvableMatrix (..), Vector,
+import           Types         (SimpleMatrix (..), SolvableMatrix (..), Vector (..),
                                 diagMatrix)
 
 import           Control.Monad (forM, forM_)
@@ -37,9 +39,9 @@ instance SolvableMatrix GaussMatrix where
     toMatrix = vals
     rowsN = nrows
     colsM = ncols
-    solve m = getRow 0 =<< fromJust <$> gauss m where
+    solve m = fromJust <$> gauss m >>= return . getRow 0 where
       getRow :: Int → GaussMatrix → Vector Double
-      getRow i m = mapIndices (0, ncols m-1) ((,) i) (vals m)
+      getRow i m = Vector (ncols m-1) (mapIndices (0, ncols m-1) ((,) i) (vals m))
 
 
 getIndex :: GaussMatrix → Int → Int → (Int, Int)

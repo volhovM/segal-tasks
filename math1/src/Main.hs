@@ -8,4 +8,4 @@ import Types
 main :: IO ()
 main = do
     putStrLn "Still not implemented, meh"
-    undefined G.main
+    G.main

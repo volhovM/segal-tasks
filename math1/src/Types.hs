@@ -1,3 +1,4 @@
+{-# LANGUAGE UnicodeSyntax         #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes            #-}
@@ -6,7 +7,7 @@
 module Types
        ( SimpleMatrix (..)
        , SolvableMatrix (..)
-       , Vector
+       , Vector (..)
        , simpleMatrix
        , diagMatrix
        , hilbert
@@ -24,7 +25,10 @@ data SimpleMatrix n = SimpleMatrix
     , sData :: IOUArray (Int, Int) n
     }
 
-type Vector a = IO (IOUArray Int a)
+data Vector a = Vector
+    { sLength :: !Int
+    , sValues :: IO (IOUArray Int a)
+    }
 
 class (MArray IOUArray (Elem a) IO, PrintfArg (Elem a)) => SolvableMatrix a  where
     type Elem a :: *
@@ -32,7 +36,7 @@ class (MArray IOUArray (Elem a) IO, PrintfArg (Elem a)) => SolvableMatrix a  whe
     toMatrix    :: a -> IOUArray (Int, Int) (Elem a)
     rowsN       :: a -> Int
     colsM       :: a -> Int
-    solve       :: a -> Vector (Elem a)
+    solve       :: a -> IO (Vector (Elem a))
 
 simpleMatrix
     :: (MArray IOUArray n IO)
