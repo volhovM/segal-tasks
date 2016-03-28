@@ -1,22 +1,78 @@
+{-# LANGUAGE TypeFamilies #-}
+
 module Gauss
        ( main
        ) where
 
-import           Types         (Matrix (..), diagMatrix, get, matrix, set)
+import           Types         (SimpleMatrix (..), SolvableMatrix (..),
+                                diagMatrix)
 
 import           Control.Monad (forM, forM_)
+import           Data.Array.IO (IOUArray, newListArray, readArray, writeArray)
 import           Data.List     (maximumBy)
 import           Data.Ord      (comparing)
 
+
+data GaussMatrix = GaussMatrix
+    { nrows     :: !Int
+    , ncols     :: !Int
+    , freeCols  :: !Int
+    , rowOffset :: !Int
+    , colOffset :: !Int
+    , vals      :: IOUArray (Int, Int) Double
+    }
+
+instance SolvableMatrix GaussMatrix where
+    type Elem GaussMatrix = Double
+    fromMatrix SimpleMatrix{..} = GaussMatrix { nrows = sSize
+                                              , ncols = sSize
+                                              , freeCols = 1
+                                              , rowOffset = 0
+                                              , colOffset = 0
+                                              , vals = sData
+                                              }
+    toMatrix = vals
+    rowsN = nrows
+    colsM = ncols
+    solve = undefined -- TODO
+
+getIndex :: GaussMatrix → Int → Int → (Int, Int)
+getIndex m i j = (rowOffset m + i, colOffset m + j)
+
+get :: GaussMatrix → Int → Int → IO Double
+get m i j = readArray (vals m) (getIndex m i j)
+
+set :: GaussMatrix → Int → Int → Double → IO ()
+set m i j = writeArray (vals m) (getIndex m i j)
+
+matrix
+    :: Int
+    -> Int
+    -> Int
+    -> ((Int, Int) -> Double)
+    -> ((Int, Int) -> Double)
+    -> IO GaussMatrix
+matrix n m m' f f' = do
+  let ls = flip concatMap [0..n-1] $ \i → map (f . (,) i) [0..m-1] ++ map (f' . (,) i) [0..m'-1]
+  vs ← newListArray ((0,0), (n-1,m+m'-1)) ls
+  return GaussMatrix
+    { nrows     = n
+    , ncols     = m
+    , freeCols  = m'
+    , rowOffset = 0
+    , colOffset = 0
+    , vals      = vs
+    }
+
 -- m[i] += c * m[j]
-addMul :: Matrix → Int → Double → Int → IO ()
+addMul :: GaussMatrix → Int → Double → Int → IO ()
 addMul m i c j =
   forM_ [0..ncols m + freeCols m - 1] $ \k →
   do vi ← get m i k
      vj ← get m j k
      set m i k (vi + c * vj)
 
-swapRows :: Matrix → Int → Int → IO ()
+swapRows :: GaussMatrix → Int → Int → IO ()
 swapRows _ i j | i == j = return ()
 swapRows m i j =
   forM_ [0..ncols m + freeCols m - 1] $ \k →
@@ -25,12 +81,12 @@ swapRows m i j =
      set m i k vj
      set m j k vi
 
-columnAbsMax :: Matrix → Int → IO (Int, Double)
+columnAbsMax :: GaussMatrix → Int → IO (Int, Double)
 columnAbsMax m i = do
   l ← mapM (\j → (,) j <$> get m i j) [0..nrows m-1]
   return $ maximumBy (comparing $ abs . snd) l
 
-elimFirstCol :: Matrix → IO Bool
+elimFirstCol :: GaussMatrix → IO Bool
 elimFirstCol m = do
   (imax, vmax) ← columnAbsMax m 0
   if vmax == 0 then
@@ -44,7 +100,7 @@ elimFirstCol m = do
       set m j 0 0.0 -- just to be sure
     return True
 
-submatrix :: Matrix → Int → Int → Matrix
+submatrix :: GaussMatrix → Int → Int → GaussMatrix
 submatrix m i j | nrows m < i || ncols m < j = error "submatrix"
 submatrix m i j =
   m { nrows     = nrows m - i
@@ -54,7 +110,7 @@ submatrix m i j =
     , colOffset = colOffset m + j
     }
 
-echelon :: Matrix → IO Bool
+echelon :: GaussMatrix → IO Bool
 echelon m | nrows m == 0 || ncols m == 0 = return True
 echelon m = do
   b ← elimFirstCol m
@@ -62,7 +118,7 @@ echelon m = do
     then echelon (submatrix m 1 1)
     else return False
 
-backsub :: Matrix → IO Matrix
+backsub :: GaussMatrix → IO GaussMatrix
 backsub m = do
   res ← matrix (freeCols m) (ncols m) 0 (const 0) undefined
   forM_ (reverse [0..ncols m-1]) $ \i →
@@ -77,7 +133,7 @@ backsub m = do
         set m j (ncols m + k) (bjk - mji / rik)
   return res
 
-gauss :: Matrix → IO (Maybe Matrix)
+gauss :: GaussMatrix → IO (Maybe GaussMatrix)
 gauss m = do
   b ← echelon m
   if b
@@ -87,7 +143,7 @@ gauss m = do
 --vectorToList :: Vector → IO [Double]
 --vectorToList = getElems
 
-matrixToList :: Matrix → IO [[Double]]
+matrixToList :: GaussMatrix → IO [[Double]]
 matrixToList m =
   forM [0..nrows m-1] $ \i →
     forM [0..ncols m-1] $ \j →
@@ -96,7 +152,7 @@ matrixToList m =
 main :: IO ()
 main = do
   --a ← hilbert 3
-  a ← diagMatrix 5 (\i → fromIntegral i + 1)
+  a ← fromMatrix <$> diagMatrix 5 (\i → fromIntegral i + 1)
   r ← gauss a
   case r of
     Nothing → putStrLn "singular"
