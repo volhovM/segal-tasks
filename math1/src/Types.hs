@@ -11,13 +11,14 @@ module Types
        , simpleMatrix
        , diagMatrix
        , hilbert
+       , cond
 --       , printMatrix
        ) where
 
 import           Control.Monad              (forM_)
 import           Foreign.Storable           (Storable)
-import           Numeric.LinearAlgebra      (Field)
-import           Numeric.LinearAlgebra.Data (Matrix, Vector, (><), (|>))
+import           Numeric.LinearAlgebra      (Element, Field, det, inv)
+import           Numeric.LinearAlgebra.Data (Matrix, Vector, cols, rows, toLists, (><), (|>))
 import           System.IO                  (stdout)
 import           Text.Printf                (PrintfArg, hPrintf)
 
@@ -54,6 +55,14 @@ diagMatrix n f = simpleMatrix n (\(i,j) -> if i==j then f i else 0) $ const 1
 
 hilbert :: Int -> SLAE Double
 hilbert n = simpleMatrix n (\(i,j) -> 1 / fromIntegral (i+j+1)) $ const 1
+
+cond :: (Element t, Field t, Num t, Ord t) => Matrix t -> Maybe t
+cond m =    if rows m == 0 || rows m /= cols m || det m == 0
+            then Nothing
+            else Just $ norm m * (norm $ inv m)
+
+norm :: (Element t, Num t, Ord t) => Matrix t -> t
+norm m = foldl1 max $ flip map (toLists m) $ foldl (\i j -> i + abs j) 0
 
 --printMatrix :: (SolvableMatrix a) => a -> IO ()
 --printMatrix m =
