@@ -24,13 +24,15 @@ data GaussMatrix = GaussMatrix
 
 instance SolvableMatrix GaussMatrix where
     type Elem GaussMatrix = Double
-    fromMatrix SimpleMatrix{..} = GaussMatrix { nrows = sSize
-                                              , ncols = sSize
-                                              , freeCols = 1
-                                              , rowOffset = 0
-                                              , colOffset = 0
-                                              , vals = sData
-                                              }
+    fromMatrix SimpleMatrix{..} =
+        GaussMatrix
+        { nrows = sSize
+        , ncols = sSize
+        , freeCols = 1
+        , rowOffset = 0
+        , colOffset = 0
+        , vals = sData
+        }
     toMatrix = vals
     rowsN = nrows
     colsM = ncols
@@ -47,11 +49,11 @@ set m i j = writeArray (vals m) (getIndex m i j)
 
 matrix
     :: Int
-    -> Int
-    -> Int
-    -> ((Int, Int) -> Double)
-    -> ((Int, Int) -> Double)
-    -> IO GaussMatrix
+    → Int
+    → Int
+    → ((Int, Int) → Double)
+    → ((Int, Int) → Double)
+    → IO GaussMatrix
 matrix n m m' f f' = do
   let ls = flip concatMap [0..n-1] $ \i → map (f . (,) i) [0..m-1] ++ map (f' . (,) i) [0..m'-1]
   vs ← newListArray ((0,0), (n-1,m+m'-1)) ls
