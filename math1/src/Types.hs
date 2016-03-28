@@ -6,6 +6,7 @@
 module Types
        ( SimpleMatrix (..)
        , SolvableMatrix (..)
+       , Vector
        , simpleMatrix
        , diagMatrix
        , hilbert
@@ -23,13 +24,15 @@ data SimpleMatrix n = SimpleMatrix
     , sData :: IOUArray (Int, Int) n
     }
 
+type Vector a = IO (IOUArray Int a)
+
 class (MArray IOUArray (Elem a) IO, PrintfArg (Elem a)) => SolvableMatrix a  where
     type Elem a :: *
     fromMatrix  :: SimpleMatrix (Elem a) -> a
     toMatrix    :: a -> IOUArray (Int, Int) (Elem a)
     rowsN       :: a -> Int
     colsM       :: a -> Int
-    solve       :: a -> IO (IOUArray Int (Elem a))
+    solve       :: a -> Vector (Elem a)
 
 simpleMatrix
     :: (MArray IOUArray n IO)

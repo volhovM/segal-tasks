@@ -4,7 +4,7 @@ module Gauss
        ( main
        ) where
 
-import           Types         (SimpleMatrix (..), SolvableMatrix (..),
+import           Types         (SimpleMatrix (..), SolvableMatrix (..), Vector,
                                 diagMatrix)
 
 import           Control.Monad (forM, forM_)
@@ -38,7 +38,7 @@ instance SolvableMatrix GaussMatrix where
     rowsN = nrows
     colsM = ncols
     solve m = getRow 0 =<< fromJust <$> gauss m where
-      getRow :: Int → GaussMatrix → IO (IOUArray Int Double)
+      getRow :: Int → GaussMatrix → Vector Double
       getRow i m = mapIndices (0, ncols m-1) ((,) i) (vals m)
 
 
