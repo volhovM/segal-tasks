@@ -8,9 +8,10 @@ import           Types         (SimpleMatrix (..), SolvableMatrix (..),
                                 diagMatrix)
 
 import           Control.Monad (forM, forM_)
-import           Data.Array.IO (IOUArray, newListArray, readArray, writeArray)
+import           Data.Array.IO (IOUArray, newListArray, readArray, writeArray, mapIndices)
 import           Data.List     (maximumBy)
 import           Data.Ord      (comparing)
+import           Data.Maybe    (fromJust)
 
 
 data GaussMatrix = GaussMatrix
@@ -36,7 +37,10 @@ instance SolvableMatrix GaussMatrix where
     toMatrix = vals
     rowsN = nrows
     colsM = ncols
-    solve = undefined -- TODO
+    solve m = getRow 0 =<< fromJust <$> gauss m where
+      getRow :: Int → GaussMatrix → IO (IOUArray Int Double)
+      getRow i m = mapIndices (0, ncols m-1) ((,) i) (vals m)
+
 
 getIndex :: GaussMatrix → Int → Int → (Int, Int)
 getIndex m i j = (rowOffset m + i, colOffset m + j)
