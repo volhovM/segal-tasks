@@ -11,6 +11,7 @@ module Types
        , simpleMatrix
        , diagMatrix
        , hilbert
+       , goodMatrix
        , cond
 --       , printMatrix
        ) where
@@ -55,6 +56,13 @@ diagMatrix n f = simpleMatrix n (\(i,j) -> if i==j then f i else 0) $ const 1
 
 hilbert :: Int -> SLAE Double
 hilbert n = simpleMatrix n (\(i,j) -> 1 / fromIntegral (i+j+1)) $ const 1
+
+goodMatrix :: Int -> SLAE Double
+goodMatrix n =
+  flip (simpleMatrix n) (const 1) $ \(i,j) ->
+  if i == j
+    then 1 + sum (flip map ([0..i-1]++[i+1..n-1]) $ \k → 1 / fromIntegral (i+k+1))
+    else 1 / fromIntegral (i+j+1)
 
 cond :: (Element t, Field t, Num t, Ord t) => Matrix t -> Maybe t
 cond m =    if rows m == 0 || rows m /= cols m || det m == 0
