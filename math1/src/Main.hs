@@ -8,7 +8,8 @@ module Main where
 import           ConjGradient               (ConjSLAE)
 import           Gauss                      (GaussMatrix)
 import           Types                      (SLAE, diagMatrix, fromSLAE,
-                                             goodMatrix, hilbert, solve)
+                                             goodMatrix, hilbert, sMatrix,
+                                             solve)
 
 import qualified Brick.AttrMap              as A
 import           Brick.Main                 (App (..), continue, defaultMain,
@@ -24,6 +25,7 @@ import           Control.Lens               (Lens', makeLenses, (&), (.~), (^.))
 import           Control.Monad              (void)
 import           Control.Monad.IO.Class     (liftIO)
 import qualified Graphics.Vty               as V
+import           Numeric.LinearAlgebra      (( #> ))
 import           Numeric.LinearAlgebra.Data (Vector, asRow, disps)
 
 data MatrixType
@@ -45,7 +47,7 @@ data AppState = AppState
     , _chosenMatType  :: Maybe MatrixType
     , _chosenSize     :: Maybe Int
     , _renderedMatrix :: String
-    , _answers        :: [(String, String)]
+    , _answers        :: [(String, String, String)]
     , _edit1          :: E.Editor
     , _edit2          :: E.Editor
     }
@@ -91,7 +93,7 @@ drawUI st = [ui]
                     C.center
                         (str $
                          unlines $
-                         map (\(a,b) -> a ++ b) $
+                         map (\(a,b,c) -> a ++ b ++ "Sanity check: " ++ c) $
                          st ^. answers)]
             , hBorder
             , str "Press Tab to switch between editors, Esc to quit."]
@@ -125,6 +127,10 @@ appEvent st ev =
                   st' & renderedMatrix .~ show (getMatrixWithType matType 5))
                  (\matSize ->
                        do let initMatrix = getMatrixWithType matType matSize
+                              makeAnswer description vec = ( description
+                                                           , showVec vec
+                                                           , showVec (sMatrix initMatrix #> vec))
+                              showVec = disps 3 . asRow
                           (morphedMatrixGauss :: GaussMatrix) <-
                               liftIO $ fromSLAE initMatrix
                           (solutionGauss :: Vector Double) <-
@@ -135,9 +141,8 @@ appEvent st ev =
                               liftIO $ solve morphedMatrixConj
                           proceed $
                               st' & renderedMatrix .~ show initMatrix & answers .~
-                              [ ("Gauss:       ", disps 3 $ asRow solutionGauss)
-                              , ("ConjGradient:", disps 3 $ asRow solutionConj)
-                              ])
+                              [ makeAnswer "Gauss:       " solutionGauss
+                              , makeAnswer "ConjGradient:" solutionConj ])
                  (st' ^. chosenSize)
     proceed = continue . switchEditors
 
