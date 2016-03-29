@@ -20,8 +20,8 @@ import           Brick.Widgets.Core         (hBox, hLimit, str, vBox, vLimit,
                                              (<+>), (<=>))
 import qualified Brick.Widgets.Edit         as E
 import           Control.Lens               (Lens', makeLenses, (&), (.~), (^.))
+import           Control.Monad              (void)
 import           Control.Monad.IO.Class     (liftIO)
-import           Data.Maybe                 (fromJust, fromMaybe, isJust)
 import qualified Graphics.Vty               as V
 import           Numeric.LinearAlgebra.Data (Vector, asRow, disps)
 
@@ -97,31 +97,34 @@ appEvent st ev =
         V.EvKey V.KEsc [] -> halt st
         V.EvKey V.KEnter []
           | st ^. currentEditor == firstEditor -> do
-              let tp =
-                      (read $ head $ E.getEditContents $ st ^. edit1) :: MatrixType
-              continue $
-                  switchEditors $
-                  st & renderedMatrix .~ show
-                           (getMatrixWithType tp (fromMaybe 5 $ st ^. chosenSize))
-                     & chosenMatType .~ (Just tp)
-
+              let tp = (read $ head $ E.getEditContents $ st ^. edit1) :: MatrixType
+              updateMatrixAndSolutions $ st & chosenMatType .~ Just tp
         V.EvKey V.KEnter []
-          | st ^. currentEditor == secondEditor && isJust (st ^. chosenMatType) -> do
+          | st ^. currentEditor == secondEditor -> do
               let sz = (read $ head $ E.getEditContents $ st ^. edit2) :: Int
-                  tp = fromJust $ st ^. chosenMatType
-                  initMatrix = getMatrixWithType tp sz
-              (morphedMatrix :: G.GaussMatrix) <-
-                  liftIO $
-                  fromSLAE initMatrix
-              (solution :: Vector Double) <- liftIO $ solve morphedMatrix
-              continue $
-                  switchEditors $ st
-                      & chosenSize .~ Just sz
-                      & renderedMatrix .~ show initMatrix
-                      & answers .~ [("Gauss", disps 3 $ asRow solution)]
+              updateMatrixAndSolutions $ st & chosenSize .~ Just sz
         V.EvKey (V.KChar '\t') [] -> continue $ switchEditors st
         V.EvKey V.KBackTab [] -> continue $ switchEditors st
         _ -> continue =<< T.handleEventLensed st (currentEditorL st) ev
+  where
+    updateMatrixAndSolutions :: AppState -> T.EventM (T.Next AppState)
+    updateMatrixAndSolutions st' =
+        flip (maybe (proceed st')) (st' ^. chosenMatType) $
+        \matType ->
+             maybe
+                 (proceed $
+                  st' & renderedMatrix .~ show (getMatrixWithType matType 5))
+                 (\matSize ->
+                       do let initMatrix = getMatrixWithType matType matSize
+                          (morphedMatrix :: G.GaussMatrix) <-
+                              liftIO $ fromSLAE initMatrix
+                          (solution :: Vector Double) <-
+                              liftIO $ solve morphedMatrix
+                          proceed $
+                              st' & renderedMatrix .~ show initMatrix & answers .~
+                              [("Gauss", disps 3 $ asRow solution)])
+                 (st' ^. chosenSize)
+    proceed = continue . switchEditors
 
 initialState :: AppState
 initialState =
@@ -154,9 +157,4 @@ theApp =
     }
 
 main :: IO ()
-main = do
-    st <- defaultMain theApp initialState
-    putStrLn "In input 1 you entered:\n"
-    putStrLn $ unlines $ E.getEditContents $ st^.edit1
-    putStrLn "In input 2 you entered:\n"
-    putStrLn $ unlines $ E.getEditContents $ st^.edit2
+main = void $ defaultMain theApp initialState
