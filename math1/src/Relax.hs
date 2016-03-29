@@ -1,50 +1,64 @@
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE TemplateHaskell        #-}
+{-# LANGUAGE TypeSynonymInstances   #-}
+
 module Relax
-       --( relaxSolve
-       ( upper
-       , lower
+       ( RelaxSLAE (..)
+       , main
        ) where
 
-import Types                      (SLAE (..))
+import Types                        (SLAE (..), SolvableMatrix (..), goodMatrix, hilbert)
 
-import Control.Lens                 (makeLenses, (.=), use)
+import Control.Lens                 (makeLenses, (.=), (+=), use)
+import Control.Monad                (forM_)
 import Control.Monad.Loops          (untilM_)
 import Control.Monad.State.Lazy     (State, runState)
-import Numeric.LinearAlgebra.Data   (Matrix, Vector, fromList, fromRows, scalar, size, subMatrix, subVector, takesV, toList, toLists, toRows, vjoin)
+import Numeric.LinearAlgebra        (norm_2, (<.>))
+import Numeric.LinearAlgebra.Data
 
 data RelaxState = RS {
-      _bk :: Vector Double
-    , _xp :: Vector Double
+      _rk :: Vector Double
     , _xk :: Vector Double
 }
---makeLenses ''RelaxState
+$(makeLenses ''RelaxState)
 
+eps = 1e-9 :: Double
+rs = RS (vector []) (vector [])
+
+type RelaxSLAE = SLAE Double
 type RelaxSolveState a = State RelaxState a
 
---relax :: Matrix Double -> Vector Double -> RelaxSolveState (Vector Double)
---relax = relax' 2
+instance SolvableMatrix RelaxSLAE Double where
+    fromSLAE    = return
+    toSLAE      = return
+    rowsN       = sSize
+    colsM       = sSize
+    solve f     = return $ fst $ runState (relax (sMatrix f) (sVector f)) rs
+
+relax :: Matrix Double -> Vector Double -> RelaxSolveState (Vector Double)
+relax = relax' 1.5
 
 relax' :: Double -> Matrix Double -> Vector Double -> RelaxSolveState (Vector Double)
 relax' om a' b' = do
-    let a = -om * divideByDiag a' :: Matrix Double
-    let n = min (rows a) (cols a)
-    do {
-        forM [0 .. n - 1] $ \i -> do
-            
-    } untilM_ ()
-
+    let n = min (rows a') (cols a')
+    let (a, b) = (-scalar om * (a'' - ident n), scalar om * b'') where (a'', b'') = divideByDiag a' b'
+    xk .= konst 0.0 n
+    do
+        rk .= konst 0.0 n
+        forM_ [0 .. n - 1] $ \i -> do
+            xk' <- use xk
+            let newXi = (1 - om) * xk' `atIndex` i + b `atIndex` i + takeRow i a <.> xk'
+            let xiDiff = substV i (newXi - xk' `atIndex` i) $ konst 0.0 n
+            rk += xiDiff
+            xk += xiDiff
+        `untilM_` use rk >>= return . (>) eps . norm_2
+    use xk
 
 divideByDiag :: Matrix Double -> Vector Double -> (Matrix Double, Vector Double)
 divideByDiag a b  = (fromRows $ flip mapIndiced (toRows a) $ \v i -> v / scalar (diagElement a i),
                     fromList $ flip mapIndiced (toList b) $ \x i -> x / diagElement a i)
                     where diagElement a i = (head . head . toLists . subMatrix (i, i) (1, 1)) a
-
-upper :: Matrix Double -> Matrix Double
-upper m = fromRows $ flip mapIndiced (toRows m)
-          $ \v i -> vjoin [(fromList . replicate (i + 1)) 0, subVector (i + 1) (size v - i - 1) v]
-
-lower :: Matrix Double -> Matrix Double
-lower m = fromRows $ flip mapIndiced (toRows m)
-          $ \v i -> vjoin [subVector 0 i v , (fromList . replicate (size v - i)) 0]
 
 mapIndiced :: (a -> Int -> b) -> [a] -> [b]
 mapIndiced f l = zipWith f l [0 ..]
@@ -55,3 +69,11 @@ substV i x v = vjoin [pre, scalar x, post]
 
 takeRow :: Int -> Matrix Double -> Vector Double
 takeRow i = head . drop i . toRows
+
+main :: IO ()
+main = do
+    m <- fromSLAE $ goodMatrix 3 :: IO RelaxSLAE
+    --m <- fromSLAE $ hilbert 3 :: IO RelaxSLAE
+    print =<< return m
+    print =<< return . toList =<< (solve m :: IO (Vector Double))
+
