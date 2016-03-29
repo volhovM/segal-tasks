@@ -10,12 +10,12 @@ module Gauss
 import           Types                      (SLAE (..), SolvableMatrix (..),
                                              diagMatrix)
 
-import           Control.Monad              (forM, forM_)
+import           Control.Monad              (forM, forM_, when)
 import           Data.Array.IO              (IOUArray, newListArray, readArray,
                                              writeArray)
 import           Data.List                  (maximumBy)
 import           Data.Ord                   (comparing)
-import           Numeric.LinearAlgebra.Data (asColumn, toLists, (|||))
+import           Numeric.LinearAlgebra.Data (asColumn, toLists, (|||), matrix, vector)
 
 
 data GaussMatrix = GaussMatrix
@@ -41,11 +41,21 @@ instance SolvableMatrix GaussMatrix Double where
             , colOffset = 0
             , ..
             }
-    toSLAE = undefined -- TODO It shouldn't be hard
+    toSLAE m@GaussMatrix{..} = do
+      when (nrows /= ncols) $ error "gauss: nrows /= ncols"
+      when (freeCols /= 1) $ error "gauss: freeCols /= 1"
+      when (rowOffset /= 0 || colOffset /= 0) $ error "gauss: offset"
+
+      let sSize = nrows
+      sMatrix ← matrix sSize <$> concat <$> matrixToList m
+      sVector ← vector <$> forM [0..sSize-1] (\i → get m i sSize)
+
+      return SLAE{..}
     rowsN = nrows
     colsM = ncols
---    solve m = fromJust <$> gauss m >>= return . getRow 0
-    solve m = undefined m -- TODO Easy
+    solve m = do
+      Just r ← gauss m
+      vector <$> forM [0..ncols r-1] (\i → get r i 0)
 
 getIndex :: GaussMatrix → Int → Int → (Int, Int)
 getIndex m i j = (rowOffset m + i, colOffset m + j)
@@ -56,14 +66,14 @@ get m i j = readArray (vals m) (getIndex m i j)
 set :: GaussMatrix → Int → Int → Double → IO ()
 set m i j = writeArray (vals m) (getIndex m i j)
 
-matrix
+gmatrix
     :: Int
     → Int
     → Int
     → ((Int, Int) → Double)
     → ((Int, Int) → Double)
     → IO GaussMatrix
-matrix n m m' f f' = do
+gmatrix n m m' f f' = do
   let ls = flip concatMap [0..n-1] $ \i → map (f . (,) i) [0..m-1] ++ map (f' . (,) i) [0..m'-1]
   vs ← newListArray ((0,0), (n-1,m+m'-1)) ls
   return GaussMatrix
@@ -131,7 +141,7 @@ echelon m = do
 
 backsub :: GaussMatrix → IO GaussMatrix
 backsub m = do
-  res ← matrix (freeCols m) (ncols m) 0 (const 0) undefined
+  res ← gmatrix (freeCols m) (ncols m) 0 (const 0) undefined
   forM_ (reverse [0..ncols m-1]) $ \i →
     forM_ [0..freeCols m-1] $ \k → do
       bik ← get m i (ncols m + k)
