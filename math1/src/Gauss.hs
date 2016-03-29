@@ -30,7 +30,7 @@ data GaussMatrix = GaussMatrix
 instance SolvableMatrix GaussMatrix Double where
     fromSLAE SLAE{..} = do
         vals <-
-            newListArray ((0, 0), (sSize - 1, sSize - 1)) $
+            newListArray ((0, 0), (sSize - 1, sSize)) $
             concat $ toLists (sMatrix ||| asColumn sVector)
         return
             GaussMatrix
