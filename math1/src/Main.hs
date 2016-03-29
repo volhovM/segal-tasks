@@ -18,7 +18,7 @@ import           Brick.Util                 (on)
 import           Brick.Widgets.Border       (hBorder)
 import qualified Brick.Widgets.Center       as C
 import           Brick.Widgets.Core         (hBox, hLimit, str, vBox, vLimit,
-                                             (<+>), (<=>))
+                                             (<+>))
 import qualified Brick.Widgets.Edit         as E
 import           Control.Lens               (Lens', makeLenses, (&), (.~), (^.))
 import           Control.Monad              (void)
@@ -31,6 +31,9 @@ data MatrixType
     | Diagonal
     | Good
     deriving (Show,Read)
+
+allMatrixTypes :: [MatrixType]
+allMatrixTypes = [Hilbert, Diagonal, Good]
 
 getMatrixWithType :: MatrixType -> Int -> SLAE Double
 getMatrixWithType Hilbert n = hilbert n
@@ -70,11 +73,16 @@ drawUI st = [ui]
   where
     ui =
         vBox
-            [ (str "Current state: " <=>
-               hBox
+            [ (str $ concat [ "Current state: matrix type: "
+                            , show (st ^. chosenMatType)
+                            , ", size: "
+                            , show (st ^. chosenSize)
+                            , ". Available matrix types: "
+                            , show allMatrixTypes] )
+            , hBox
                    [ (textField "Matrix type:" 10 1 (st ^. edit1))
                    , str " "
-                   , (textField "Matrix size:" 10 1 (st ^. edit2))])
+                   , (textField "Matrix size:" 10 1 (st ^. edit2))]
             , hBorder
             , vBox
                   [ C.center (str $ st ^. renderedMatrix)
