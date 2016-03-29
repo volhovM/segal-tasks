@@ -90,7 +90,7 @@ drawUI st = [ui]
             , vBox
                   [ C.center (str $ st ^. renderedMatrix)
                   , hBorder
-                  , vLimit 10 $
+                  , vLimit 15 $
                     C.center
                         (str $
                          unlines $
