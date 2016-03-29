@@ -102,7 +102,7 @@ swapRows m i j =
 
 columnAbsMax :: GaussMatrix → Int → IO (Int, Double)
 columnAbsMax m i = do
-  l ← mapM (\j → (,) j <$> get m i j) [0..nrows m-1]
+  l ← mapM (\j → (,) j <$> get m j i) [0..nrows m-1]
   return $ maximumBy (comparing $ abs . snd) l
 
 elimFirstCol :: GaussMatrix → IO Bool
@@ -140,7 +140,7 @@ echelon m = do
 backsub :: GaussMatrix → IO GaussMatrix
 backsub m = do
   res ← gmatrix (freeCols m) (ncols m) 0 (const 0) undefined
-  forM_ (reverse [0..ncols m-1]) $ \i →
+  forM_ (reverse [0..nrows m-1]) $ \i →
     forM_ [0..freeCols m-1] $ \k → do
       bik ← get m i (ncols m + k)
       mii ← get m i i
@@ -149,7 +149,7 @@ backsub m = do
       forM_ [0..i-1] $ \j → do
         bjk ← get m j (ncols m + k)
         mji ← get m j i
-        set m j (ncols m + k) (bjk - mji / rik)
+        set m j (ncols m + k) (bjk - mji * rik)
   return res
 
 gauss :: GaussMatrix → IO (Maybe GaussMatrix)
