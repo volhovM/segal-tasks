@@ -7,7 +7,7 @@ module Main where
 
 import qualified Gauss                      as G
 import           Types                      (SLAE, diagMatrix, fromSLAE,
-                                             hilbert, solve)
+                                             goodMatrix, hilbert, solve)
 
 import qualified Brick.AttrMap              as A
 import           Brick.Main                 (App (..), continue, defaultMain,
@@ -28,11 +28,13 @@ import           Numeric.LinearAlgebra.Data (Vector, asRow, disps)
 data MatrixType
     = Hilbert
     | Diagonal
+    | Good
     deriving (Show,Read)
 
 getMatrixWithType :: MatrixType -> Int -> SLAE Double
 getMatrixWithType Hilbert n = hilbert n
 getMatrixWithType Diagonal n = diagMatrix n $ const 5
+getMatrixWithType Good n = goodMatrix n
 
 data AppState = AppState
     { _currentEditor  :: T.Name
