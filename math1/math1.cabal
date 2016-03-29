@@ -17,6 +17,7 @@ cabal-version:       >=1.10
 executable math1
   main-is:             Main.hs
   other-modules:       Gauss
+                     , ConjGradient
                      , Types
   -- other-extensions:
   build-depends:       aeson >= 0.9.0.1
@@ -24,6 +25,8 @@ executable math1
                      , base >= 4.8.2.0 
                      , mtl >= 2.2.1
                      , hmatrix >= 0.17.0.1
+                     , lens >= 4.13
+                     , monad-loops >= 0.4.3
   hs-source-dirs:      src
   default-language:    Haskell2010
   default-extensions:  OverloadedStrings
