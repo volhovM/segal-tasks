@@ -5,7 +5,8 @@
 
 module Main where
 
-import qualified Gauss                      as G
+import           ConjGradient               (ConjSLAE)
+import           Gauss                      (GaussMatrix)
 import           Types                      (SLAE, diagMatrix, fromSLAE,
                                              goodMatrix, hilbert, solve)
 
@@ -82,7 +83,7 @@ drawUI st = [ui]
                     C.center
                         (str $
                          unlines $
-                         map (\(a,b) -> a ++ ": " ++ b) $
+                         map (\(a,b) -> a ++ b) $
                          st ^. answers)]
             , hBorder
             , str "Press Tab to switch between editors, Esc to quit."]
@@ -116,13 +117,19 @@ appEvent st ev =
                   st' & renderedMatrix .~ show (getMatrixWithType matType 5))
                  (\matSize ->
                        do let initMatrix = getMatrixWithType matType matSize
-                          (morphedMatrix :: G.GaussMatrix) <-
+                          (morphedMatrixGauss :: GaussMatrix) <-
                               liftIO $ fromSLAE initMatrix
-                          (solution :: Vector Double) <-
-                              liftIO $ solve morphedMatrix
+                          (solutionGauss :: Vector Double) <-
+                              liftIO $ solve morphedMatrixGauss
+                          (morphedMatrixConj :: ConjSLAE) <-
+                              liftIO $ fromSLAE initMatrix
+                          (solutionConj :: Vector Double) <-
+                              liftIO $ solve morphedMatrixConj
                           proceed $
                               st' & renderedMatrix .~ show initMatrix & answers .~
-                              [("Gauss", disps 3 $ asRow solution)])
+                              [ ("Gauss:       ", disps 3 $ asRow solutionGauss)
+                              , ("ConjGradient:", disps 3 $ asRow solutionConj)
+                              ])
                  (st' ^. chosenSize)
     proceed = continue . switchEditors
 
