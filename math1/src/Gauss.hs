@@ -3,9 +3,7 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE UnicodeSyntax         #-}
 
-module Gauss
-       ( main
-       ) where
+module Gauss (GaussMatrix) where
 
 import           Types                      (SLAE (..), SolvableMatrix (..),
                                              diagMatrix)
@@ -15,8 +13,8 @@ import           Data.Array.IO              (IOUArray, newListArray, readArray,
                                              writeArray)
 import           Data.List                  (maximumBy)
 import           Data.Ord                   (comparing)
-import           Numeric.LinearAlgebra.Data (asColumn, toLists, (|||), matrix, vector)
-
+import           Numeric.LinearAlgebra.Data (asColumn, matrix, toLists, vector,
+                                             (|||))
 
 data GaussMatrix = GaussMatrix
     { nrows     :: !Int
