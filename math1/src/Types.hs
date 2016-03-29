@@ -17,14 +17,11 @@ module Types
 --       , printMatrix
        ) where
 
-import           Control.Monad              (forM_)
 import           Foreign.Storable           (Storable)
 import           Numeric.LinearAlgebra      (Element, Field, det, inv)
 import           Numeric.LinearAlgebra.Data (Matrix, Vector, asColumn, cols,
                                              disps, rows, toLists, (><), (|>),
                                              (|||))
-import           System.IO                  (stdout)
-import           Text.Printf                (PrintfArg, hPrintf)
 
 data SLAE f = SLAE
     { sSize   :: Int
@@ -71,16 +68,10 @@ goodMatrix n =
     else 1 / fromIntegral (i+j+1)
 
 cond :: (Element t, Field t, Num t, Ord t) => Matrix t -> Maybe t
-cond m =    if rows m == 0 || rows m /= cols m || det m == 0
-            then Nothing
-            else Just $ norm m * (norm $ inv m)
+cond m =
+    if rows m == 0 || rows m /= cols m || det m == 0
+        then Nothing
+        else Just $ norm m * norm (inv m)
 
 norm :: (Element t, Num t, Ord t) => Matrix t -> t
-norm m = foldl1 max $ flip map (toLists m) $ foldl (\i j -> i + abs j) 0
-
---printMatrix :: (SolvableMatrix a) => a -> IO ()
---printMatrix m =
---  forM_ [0..rowsN m - 1] $ \i -> do
---    forM_ [0..colsM m - 1] $ \j -> do
---      hPrintf stdout "%.3f\t" $ M.getElem i j $ toSLAE m
---    putStrLn ""
+norm m = maximum $ flip map (toLists m) $ foldl (\i j -> i + abs j) 0

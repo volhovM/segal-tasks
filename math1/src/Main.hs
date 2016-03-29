@@ -5,7 +5,6 @@
 
 module Main where
 
-import qualified ConjGradient               as CG
 import qualified Gauss                      as G
 import           Types                      (SLAE, diagMatrix, fromSLAE,
                                              hilbert, solve)
@@ -15,10 +14,10 @@ import           Brick.Main                 (App (..), continue, defaultMain,
                                              halt, showCursorNamed)
 import qualified Brick.Types                as T
 import           Brick.Util                 (on)
-import           Brick.Widgets.Border       (hBorder, vBorder)
+import           Brick.Widgets.Border       (hBorder)
 import qualified Brick.Widgets.Center       as C
-import           Brick.Widgets.Core         (hBox, hLimit, padAll, str, vBox,
-                                             vLimit, (<+>), (<=>))
+import           Brick.Widgets.Core         (hBox, hLimit, str, vBox, vLimit,
+                                             (<+>), (<=>))
 import qualified Brick.Widgets.Edit         as E
 import           Control.Lens               (Lens', makeLenses, (&), (.~), (^.))
 import           Control.Monad.IO.Class     (liftIO)

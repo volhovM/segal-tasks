@@ -3,10 +3,10 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE UnicodeSyntax         #-}
 
-module Gauss (GaussMatrix) where
+module Gauss (GaussMatrix, main) where
 
 import           Types                      (SLAE (..), SolvableMatrix (..),
-                                             diagMatrix, hilbert, goodMatrix)
+                                             goodMatrix)
 
 import           Control.Monad              (forM, forM_, when)
 import           Data.Array.IO              (IOUArray, newListArray, readArray,
