@@ -9,7 +9,7 @@ packages:
 
 nix:
     enable: false
-    packages: [zlib,openssh,git,pcre,blas,liblapack]
+    packages: [zlib,openssh,git,pcre,blas,liblapack,ncurses]
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps: []
@@ -20,8 +20,8 @@ flags: {}
 # Extra package databases containing global packages
 extra-package-dbs: []
 
-extra-lib-dirs:
-    - /usr/lib
+#extra-lib-dirs:
+#    - /usr/lib
 
 # Control whether we use the GHC we find on the path
 # system-ghc: true
