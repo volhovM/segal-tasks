@@ -6,7 +6,7 @@
 module Gauss (GaussMatrix) where
 
 import           Types                      (SLAE (..), SolvableMatrix (..),
-                                             diagMatrix)
+                                             diagMatrix, hilbert)
 
 import           Control.Monad              (forM, forM_, when)
 import           Data.Array.IO              (IOUArray, newListArray, readArray,
@@ -53,7 +53,7 @@ instance SolvableMatrix GaussMatrix Double where
     colsM = ncols
     solve m = do
       Just r ← gauss m
-      vector <$> forM [0..ncols r-1] (\i → get r i 0)
+      vector <$> forM [0..ncols r-1] (\i → get r 0 i)
 
 getIndex :: GaussMatrix → Int → Int → (Int, Int)
 getIndex m i j = (rowOffset m + i, colOffset m + j)
@@ -170,8 +170,8 @@ matrixToList m =
 
 main :: IO ()
 main = do
-  --a ← hilbert 3
-  a ← fromSLAE $ diagMatrix 5 (\i → fromIntegral i + 1)
+  a ← fromSLAE $ hilbert 3
+  --a ← fromSLAE $ diagMatrix 5 (\i → fromIntegral i + 1)
   r ← gauss a
   case r of
     Nothing → putStrLn "singular"
