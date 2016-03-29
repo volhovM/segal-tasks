@@ -6,7 +6,7 @@
 module Gauss (GaussMatrix) where
 
 import           Types                      (SLAE (..), SolvableMatrix (..),
-                                             diagMatrix, hilbert)
+                                             diagMatrix, hilbert, goodMatrix)
 
 import           Control.Monad              (forM, forM_, when)
 import           Data.Array.IO              (IOUArray, newListArray, readArray,
@@ -170,8 +170,10 @@ matrixToList m =
 
 main :: IO ()
 main = do
-  a ← fromSLAE $ hilbert 3
-  --a ← fromSLAE $ diagMatrix 5 (\i → fromIntegral i + 1)
+  a ← fromSLAE $ goodMatrix 3
+  -- a ← fromSLAE $ hilbert 3
+  -- a ← fromSLAE $ diagMatrix 5 (\i → fromIntegral i + 1)
+  print =<< matrixToList a
   r ← gauss a
   case r of
     Nothing → putStrLn "singular"
