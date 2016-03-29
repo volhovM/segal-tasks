@@ -10,9 +10,6 @@ import qualified Gauss                      as G
 import           Types                      (SLAE, diagMatrix, fromSLAE,
                                              hilbert, solve)
 
-import           Control.Lens
-import qualified Graphics.Vty               as V
-
 import qualified Brick.AttrMap              as A
 import           Brick.Main                 (App (..), continue, defaultMain,
                                              halt, showCursorNamed)
@@ -23,88 +20,128 @@ import qualified Brick.Widgets.Center       as C
 import           Brick.Widgets.Core         (hBox, hLimit, padAll, str, vBox,
                                              vLimit, (<+>), (<=>))
 import qualified Brick.Widgets.Edit         as E
+import           Control.Lens               (Lens', makeLenses, (&), (.~), (^.))
 import           Control.Monad.IO.Class     (liftIO)
-import           Numeric.LinearAlgebra.Data (Vector)
+import           Data.Maybe                 (fromJust, fromMaybe, isJust)
+import qualified Graphics.Vty               as V
+import           Numeric.LinearAlgebra.Data (Vector, asRow, disps)
 
-data MatrixType = Hilbert | Diagonal deriving (Show, Read)
+data MatrixType
+    = Hilbert
+    | Diagonal
+    deriving (Show,Read)
 
 getMatrixWithType :: MatrixType -> Int -> SLAE Double
 getMatrixWithType Hilbert n = hilbert n
 getMatrixWithType Diagonal n = diagMatrix n $ const 5
 
-data St =
-    St { _currentEditor :: T.Name
-       , _edit1         :: E.Editor
-       , _edit2         :: E.Editor
-       }
+data AppState = AppState
+    { _currentEditor  :: T.Name
+    , _chosenMatType  :: Maybe MatrixType
+    , _chosenSize     :: Maybe Int
+    , _renderedMatrix :: String
+    , _answers        :: [(String, String)]
+    , _edit1          :: E.Editor
+    , _edit2          :: E.Editor
+    }
 
-$(makeLenses ''St)
+$(makeLenses ''AppState)
 
 firstEditor, secondEditor :: T.Name
 firstEditor = "edit1"
 secondEditor = "edit2"
 
-switchEditors :: St -> St
+switchEditors :: AppState -> AppState
 switchEditors st =
     let next = if st^.currentEditor == firstEditor
                then secondEditor else firstEditor
     in st & currentEditor .~ next
 
-currentEditorL :: St -> Lens' St E.Editor
+currentEditorL :: AppState -> Lens' AppState E.Editor
 currentEditorL st =
     if st^.currentEditor == firstEditor
     then edit1
     else edit2
 
-drawUI :: St -> [T.Widget]
+drawUI :: AppState -> [T.Widget]
 drawUI st = [ui]
   where
     ui =
         vBox
-            [ str "Press Tab to switch between editors, Esc to quit."
+            [ (str "Current state: " <=>
+               hBox
+                   [ (textField "Matrix type:" 10 1 (st ^. edit1))
+                   , str " "
+                   , (textField "Matrix size:" 10 1 (st ^. edit2))])
             , hBorder
-            , hBox
-                  [ hLimit 40 $ vBox
-                        [ (textField "Matrix type:" 10 1 (st ^. edit1))
-                        , str ""
-                        , (textField "Matrix size:" 10 1 (st ^. edit2))
-                        , hBorder
-                        , C.center (str "Previeooha")]
-                  , vBorder
-                  , C.center (str "Тут будет матрица")]]
+            , vBox
+                  [ C.center (str $ st ^. renderedMatrix)
+                  , hBorder
+                  , vLimit 10 $
+                    C.center
+                        (str $
+                         unlines $
+                         map (\(a,b) -> a ++ ": " ++ b) $
+                         st ^. answers)]
+            , hBorder
+            , str "Press Tab to switch between editors, Esc to quit."]
     textField t n m inner =
-        str t <=> str "" <=> (hLimit (max n $ length t) $ vLimit m $ E.renderEditor inner)
+        str t <+>
+        str " " <+>
+        (hLimit (max n $ length t) $ vLimit m $ E.renderEditor inner)
 
-appEvent :: St -> V.Event -> T.EventM (T.Next St)
+appEvent :: AppState -> V.Event -> T.EventM (T.Next AppState)
 appEvent st ev =
     case ev of
         V.EvKey V.KEsc [] -> halt st
-        V.EvKey (V.KEnter) [] | st ^. currentEditor == secondEditor -> do
-            let tp = (read $ head $ E.getEditContents $ st ^. edit1) :: MatrixType
-                sz = (read $ head $ E.getEditContents $ st ^. edit2) :: Int
-            (morphedMatrix :: G.GaussMatrix) <-
-                liftIO $ fromSLAE $ getMatrixWithType tp sz
-            (solution :: Vector Double) <- liftIO $ solve morphedMatrix
-            continue $ switchEditors st
+        V.EvKey V.KEnter []
+          | st ^. currentEditor == firstEditor -> do
+              let tp =
+                      (read $ head $ E.getEditContents $ st ^. edit1) :: MatrixType
+              continue $
+                  switchEditors $
+                  st & renderedMatrix .~ show
+                           (getMatrixWithType tp (fromMaybe 5 $ st ^. chosenSize))
+                     & chosenMatType .~ (Just tp)
+
+        V.EvKey V.KEnter []
+          | st ^. currentEditor == secondEditor && isJust (st ^. chosenMatType) -> do
+              let sz = (read $ head $ E.getEditContents $ st ^. edit2) :: Int
+                  tp = fromJust $ st ^. chosenMatType
+                  initMatrix = getMatrixWithType tp sz
+              (morphedMatrix :: G.GaussMatrix) <-
+                  liftIO $
+                  fromSLAE initMatrix
+              (solution :: Vector Double) <- liftIO $ solve morphedMatrix
+              continue $
+                  switchEditors $ st
+                      & chosenSize .~ Just sz
+                      & renderedMatrix .~ show initMatrix
+                      & answers .~ [("Gauss", disps 3 $ asRow solution)]
         V.EvKey (V.KChar '\t') [] -> continue $ switchEditors st
         V.EvKey V.KBackTab [] -> continue $ switchEditors st
         _ -> continue =<< T.handleEventLensed st (currentEditorL st) ev
 
-initialState :: St
+initialState :: AppState
 initialState =
-    St firstEditor
-       (E.editor firstEditor (str . unlines) Nothing "")
-       (E.editor secondEditor (str . unlines) (Just 2) "")
+    AppState
+        firstEditor
+        (Just Hilbert)
+        (Just 5)
+        ""
+        []
+        (E.editor firstEditor (str . unlines) Nothing "")
+        (E.editor secondEditor (str . unlines) (Just 2) "")
 
 theMap :: A.AttrMap
 theMap = A.attrMap V.defAttr
     [ (E.editAttr, V.white `on` V.blue)
     ]
 
-appCursor :: St -> [T.CursorLocation] -> Maybe T.CursorLocation
+appCursor :: AppState -> [T.CursorLocation] -> Maybe T.CursorLocation
 appCursor st = showCursorNamed (st^.currentEditor)
 
-theApp :: App St V.Event
+theApp :: App AppState V.Event
 theApp =
     App
     { appDraw = drawUI

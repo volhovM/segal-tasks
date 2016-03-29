@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -19,7 +20,9 @@ module Types
 import           Control.Monad              (forM_)
 import           Foreign.Storable           (Storable)
 import           Numeric.LinearAlgebra      (Element, Field, det, inv)
-import           Numeric.LinearAlgebra.Data (Matrix, Vector, cols, rows, toLists, (><), (|>))
+import           Numeric.LinearAlgebra.Data (Matrix, Vector, asColumn, cols,
+                                             disps, rows, toLists, (><), (|>),
+                                             (|||))
 import           System.IO                  (stdout)
 import           Text.Printf                (PrintfArg, hPrintf)
 
@@ -28,6 +31,9 @@ data SLAE f = SLAE
     , sMatrix :: Matrix f
     , sVector :: Vector f
     }
+
+instance Show (SLAE Double) where
+    show SLAE{..} = disps 3 (sMatrix ||| asColumn sVector)
 
 class (Field f) => SolvableMatrix a f where
     fromSLAE :: SLAE f -> IO a
