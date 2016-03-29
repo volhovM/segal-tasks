@@ -1,16 +1,16 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeSynonymInstances  #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
 
 module ConjGradient (main, ConjSLAE(..)) where
 
-import           Types                          (SolvableMatrix(..), SLAE(..))
-import           Control.Lens                   (makeLenses, (.=), (+=), use)
-import           Control.Monad.Loops            (untilM_)
-import           Control.Monad.State.Lazy       (State, runState)
-import           Numeric.LinearAlgebra          (norm_2, (<>), (<.>), (#>))
+import           Control.Lens               (makeLenses, use, (+=), (.=))
+import           Control.Monad.Loops        (untilM_)
+import           Control.Monad.State.Lazy   (State, runState)
+import           Numeric.LinearAlgebra      (norm_2, ( #> ), (<.>), (<>))
 import           Numeric.LinearAlgebra.Data
+import           Types                      (SLAE (..), SolvableMatrix (..))
 
 data ConjState = CS {
     _xk :: Vector Double
@@ -19,18 +19,26 @@ data ConjState = CS {
 }
 $(makeLenses ''ConjState)
 
+eps :: Double
 eps = 1e-9 :: Double
+
+cs :: ConjState
 cs = CS (vector []) (vector []) (vector [])
 
-type ConjSLAE = SLAE Double
+newtype ConjSLAE = ConjSLAE { fromConjSLAE :: SLAE Double }
 type ConjSolveState a = State ConjState a
 
 instance SolvableMatrix ConjSLAE Double where
-   fromSLAE = return 
-   toSLAE   = return
-   rowsN    = sSize
-   colsM    = sSize
-   solve f  = return $ fst $ runState (conjgrad (sMatrix f) (sVector f)) cs
+    fromSLAE = return . ConjSLAE
+    toSLAE = return . fromConjSLAE
+    rowsN = sSize . fromConjSLAE
+    colsM = sSize . fromConjSLAE
+    solve f =
+        return $
+        fst $
+        runState
+            (conjgrad (sMatrix $ fromConjSLAE f) (sVector $ fromConjSLAE f))
+            cs
 
 test_good :: Int -> (Matrix Double, Vector Double)
 test_good n = (ident n, vector (map fromIntegral [1..n]))
@@ -62,9 +70,11 @@ conjgrad a' b' = do
         ) `untilM_` use rk >>= return . (>) eps . norm_2
     use xk
 
+main :: IO ()
 main = do
     let (a, b) = test_good 10
-    --let (a, b) = test_hilbert 10
-    --let (a, b) = test_dima_n
+    let (a', b') = test_hilbert 10
+    let (a'', b'') = test_dima_n
     let x = fst $ runState (conjgrad a b) cs
     putStrLn $ show x
+    undefined a' a'' b' b''

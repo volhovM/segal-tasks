@@ -1,40 +1,50 @@
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE TemplateHaskell        #-}
-{-# LANGUAGE TypeSynonymInstances   #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
 
 module Relax
        ( RelaxSLAE (..)
        , main
        ) where
 
-import Types                        (SLAE (..), SolvableMatrix (..), goodMatrix, hilbert)
+import           Types                      (SLAE (..), SolvableMatrix (..),
+                                             goodMatrix)
 
-import Control.Lens                 (makeLenses, (.=), (+=), use)
-import Control.Monad                (forM_)
-import Control.Monad.Loops          (untilM_)
-import Control.Monad.State.Lazy     (State, runState)
-import Numeric.LinearAlgebra        (norm_2, (<.>))
-import Numeric.LinearAlgebra.Data
+import           Control.Lens               (makeLenses, use, (+=), (.=))
+import           Control.Monad              (forM_)
+import           Control.Monad.Loops        (untilM_)
+import           Control.Monad.State.Lazy   (State, runState)
+import           Numeric.LinearAlgebra      (norm_2, (<.>))
+import           Numeric.LinearAlgebra.Data
 
-data RelaxState = RS {
-      _rk :: Vector Double
+data RelaxState = RS
+    { _rk :: Vector Double
     , _xk :: Vector Double
-}
+    } deriving (Show)
+
 $(makeLenses ''RelaxState)
 
+eps :: Double
 eps = 1e-9 :: Double
+
+rs :: RelaxState
 rs = RS (vector []) (vector [])
 
-type RelaxSLAE = SLAE Double
+newtype RelaxSLAE = RelaxSLAE { fromRelaxSLAE :: SLAE Double } deriving (Show)
 type RelaxSolveState a = State RelaxState a
 
 instance SolvableMatrix RelaxSLAE Double where
-    fromSLAE    = return
-    toSLAE      = return
-    rowsN       = sSize
-    colsM       = sSize
-    solve f     = return $ fst $ runState (relax (sMatrix f) (sVector f)) rs
+    fromSLAE = return . RelaxSLAE
+    toSLAE = return . fromRelaxSLAE
+    rowsN = sSize . fromRelaxSLAE
+    colsM = sSize . fromRelaxSLAE
+    solve f =
+        return $
+        fst $
+        runState
+            (relax (sMatrix $ fromRelaxSLAE f) (sVector $ fromRelaxSLAE f))
+            rs
 
 relax :: Matrix Double -> Vector Double -> RelaxSolveState (Vector Double)
 relax = relax' 1.5
@@ -58,7 +68,7 @@ relax' om a' b' = do
 divideByDiag :: Matrix Double -> Vector Double -> (Matrix Double, Vector Double)
 divideByDiag a b  = (fromRows $ flip mapIndiced (toRows a) $ \v i -> v / scalar (diagElement a i),
                     fromList $ flip mapIndiced (toList b) $ \x i -> x / diagElement a i)
-                    where diagElement a i = (head . head . toLists . subMatrix (i, i) (1, 1)) a
+                    where diagElement _ i = (head . head . toLists . subMatrix (i, i) (1, 1)) a
 
 mapIndiced :: (a -> Int -> b) -> [a] -> [b]
 mapIndiced f l = zipWith f l [0 ..]
@@ -76,4 +86,3 @@ main = do
     --m <- fromSLAE $ hilbert 3 :: IO RelaxSLAE
     print =<< return m
     print =<< return . toList =<< (solve m :: IO (Vector Double))
-

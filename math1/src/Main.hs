@@ -7,6 +7,7 @@ module Main where
 
 import           ConjGradient               (ConjSLAE)
 import           Gauss                      (GaussMatrix)
+import           Relax                      (RelaxSLAE)
 import           Types                      (SLAE, diagMatrix, fromSLAE,
                                              goodMatrix, hilbert, sMatrix,
                                              solve)
@@ -139,10 +140,15 @@ appEvent st ev =
                               liftIO $ fromSLAE initMatrix
                           (solutionConj :: Vector Double) <-
                               liftIO $ solve morphedMatrixConj
+                          (morphedMatrixRelax :: RelaxSLAE) <-
+                              liftIO $ fromSLAE initMatrix
+                          (solutionRelax :: Vector Double) <-
+                              liftIO $ solve morphedMatrixRelax
                           proceed $
                               st' & renderedMatrix .~ show initMatrix & answers .~
                               [ makeAnswer "Gauss:       " solutionGauss
-                              , makeAnswer "ConjGradient:" solutionConj ])
+                              , makeAnswer "ConjGradient:" solutionConj
+                              , makeAnswer "Relax:       " solutionRelax ])
                  (st' ^. chosenSize)
     proceed = continue . switchEditors
 
