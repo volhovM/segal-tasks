@@ -19,6 +19,7 @@ executable math1
   other-modules:       Gauss
                      , ConjGradient
                      , Relax
+                     , Iterative
                      , Types
   -- other-extensions:
   build-depends:       aeson >= 0.9.0.1
