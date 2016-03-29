@@ -32,11 +32,16 @@ instance SolvableMatrix ConjSLAE Double where
    colsM    = sSize
    solve f  = return $ fst $ runState (conjgrad (sMatrix f) (sVector f)) cs
 
+test_good :: Int -> (Matrix Double, Vector Double)
+test_good n = (ident n, vector (map fromIntegral [1..n]))
+
 test_hilbert :: Int -> (Matrix Double, Vector Double)
 test_hilbert n = (build (n, n) (\i j -> 1/(i + j + 1)), konst 1 n)
 
---test_dima_n :: Int -> (Matrix Double, Vector Double)
---test_dima_n n = (build (n, n) (\i j -> n * i + j + 1), build n (\i -> sum (map (\j -> 1.0 * (j + 1) * (n * i + j + 1)) [0..n-1])))
+test_dima_n :: (Matrix Double, Vector Double)
+test_dima_n = (build (10, 10) gen_a, build 10 (\i -> sum (map (\j -> gen_b i j) [0..9]))) where
+    gen_a i j = 10 * i + j + 1
+    gen_b i j = (j + 1) * gen_a i j
 
 conjgrad :: Matrix Double -> Vector Double -> ConjSolveState (Vector Double)
 conjgrad a' b' = do
@@ -58,7 +63,8 @@ conjgrad a' b' = do
     use xk
 
 main = do
-    let (a, b) = test_hilbert 10
-    --let (a, b) = test_dima_n 5
+    let (a, b) = test_good 10
+    --let (a, b) = test_hilbert 10
+    --let (a, b) = test_dima_n
     let x = fst $ runState (conjgrad a b) cs
     putStrLn $ show x
