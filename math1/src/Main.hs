@@ -28,7 +28,7 @@ import           Control.Monad              (void)
 import           Control.Monad.IO.Class     (liftIO)
 import qualified Graphics.Vty               as V
 import           Numeric.LinearAlgebra      (( #> ))
-import           Numeric.LinearAlgebra.Data (Vector, asRow, disps)
+import           Numeric.LinearAlgebra.Data (Vector, asRow, disps, toList)
 
 data MatrixType
     = Hilbert
@@ -132,7 +132,9 @@ appEvent st ev =
                               makeAnswer description vec = ( description
                                                            , showVec vec
                                                            , showVec (sMatrix initMatrix #> vec))
-                              showVec = disps 3 . asRow
+                              showVec v = if any isNaN (toList v)
+                                          then "Method diverges\n"
+                                          else disps 3 $ asRow v
                           (morphedMatrixGauss :: GaussMatrix) <-
                               liftIO $ fromSLAE initMatrix
                           (solutionGauss :: Vector Double) <-
