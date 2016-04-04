@@ -13,19 +13,14 @@ module Iterative
 import           Types                          (SolvableMatrix(..), SLAE(..))
 import           Control.Lens                   (makeLenses, (.=), (+=), use)
 import           Control.Monad.Loops            (untilM_)
-import           Control.Monad.State.Lazy       (State, runState)
+import           Control.Monad.State.Lazy       (runState)
 import           Numeric.LinearAlgebra          ( add
-                                                , norm_0
-                                                , norm_1
                                                 , norm_2
-                                                , norm_Inf
-                                                , norm_Frob
                                                 , (<>)
                                                 , (#>)
                                                 , inv)
 import           Numeric.LinearAlgebra.Devel    (mapMatrixWithIndex)
 import           Numeric.LinearAlgebra.Data
-import Debug.Trace
 
 eps :: Double
 eps = 1e-9
@@ -59,7 +54,9 @@ class SolvableMatrix a Double => IterativeSolvableMatrix a where
               convergence = do
                 it <- use iters
                 if it > maxIters
-                then return True
+                then do
+                  x_k1 .= konst (0/0) (mySize a)
+                  return True
                 else do
                   x_k'  <- use x_k
                   x_k1' <- use x_k1
@@ -90,8 +87,8 @@ instance SolvableMatrix Jacobi Double where
     solve = runMethod 10000
 
 instance IterativeSolvableMatrix Jacobi where
-    converges (Jacobi _ _ _ q _) x0 x1 = ((norm_Inf $ x0 `add` ((-1) * x1)) / (abs $ 1 - q)) < eps
-    iteration (Jacobi _ _ b _ g) x = (b #> x) `add` g
+    converges (Jacobi _ _ _ q _) x0 x1 = ((norm_2 $ x0 `add` ((-1) * x1)) / (abs $ 1 - q)) < eps
+    iteration (Jacobi _ _ b _ g) x = (b #> x) `add` ((-1) * g)
     mySize = jSize
 
 {--
