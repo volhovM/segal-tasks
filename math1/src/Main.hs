@@ -108,14 +108,11 @@ appEvent :: AppState -> V.Event -> T.EventM (T.Next AppState)
 appEvent st ev =
     case ev of
         V.EvKey V.KEsc [] -> halt st
-        V.EvKey V.KEnter []
-          | st ^. currentEditor == firstEditor -> do
+        V.EvKey V.KEnter [] -> do
               let tp = (read $ head $ E.getEditContents $ st ^. edit1) :: MatrixType
+                  sz = (read $ head $ E.getEditContents $ st ^. edit2) :: Int
               updateMatrixAndSolutions $ st & chosenMatType .~ Just tp
-        V.EvKey V.KEnter []
-          | st ^. currentEditor == secondEditor -> do
-              let sz = (read $ head $ E.getEditContents $ st ^. edit2) :: Int
-              updateMatrixAndSolutions $ st & chosenSize .~ Just sz
+                                            & chosenSize .~ Just sz
         V.EvKey (V.KChar '\t') [] -> continue $ switchEditors st
         V.EvKey V.KBackTab [] -> continue $ switchEditors st
         _ -> continue =<< T.handleEventLensed st (currentEditorL st) ev
