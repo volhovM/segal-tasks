@@ -28,6 +28,9 @@ $(makeLenses ''RelaxState)
 eps :: Double
 eps = 1e-9 :: Double
 
+inf :: Double
+inf = 1e+9 :: Double
+
 rs :: RelaxState
 rs = RS (vector []) (vector [])
 
@@ -47,7 +50,7 @@ instance SolvableMatrix RelaxSLAE Double where
             rs
 
 relax :: Matrix Double -> Vector Double -> RelaxSolveState (Vector Double)
-relax = relax' 1.5
+relax = relax' 1.8
 
 relax' :: Double -> Matrix Double -> Vector Double -> RelaxSolveState (Vector Double)
 relax' om a' b' = do
@@ -62,7 +65,7 @@ relax' om a' b' = do
             let xiDiff = substV i (newXi - xk' `atIndex` i) $ konst 0.0 n
             rk += xiDiff
             xk += xiDiff
-        `untilM_` use rk >>= return . (>) eps . norm_2
+        `untilM_` use rk >>= \r -> use xk >>= \x -> return $ (eps > norm_2 r) || (norm_2 x > inf)
     use xk
 
 divideByDiag :: Matrix Double -> Vector Double -> (Matrix Double, Vector Double)
