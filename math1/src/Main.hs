@@ -8,6 +8,7 @@ module Main where
 import           ConjGradient               (ConjSLAE)
 import           Gauss                      (GaussMatrix)
 import           Relax                      (RelaxSLAE)
+import           Iterative                  (Jacobi)
 import           Types                      (SLAE, diagMatrix, fromSLAE,
                                              goodMatrix, hilbert, sMatrix,
                                              solve)
@@ -90,7 +91,7 @@ drawUI st = [ui]
             , vBox
                   [ C.center (str $ st ^. renderedMatrix)
                   , hBorder
-                  , vLimit 15 $
+                  , vLimit 20 $
                     C.center
                         (str $
                          unlines $
@@ -144,11 +145,18 @@ appEvent st ev =
                               liftIO $ fromSLAE initMatrix
                           (solutionRelax :: Vector Double) <-
                               liftIO $ solve morphedMatrixRelax
+                          (morphedMatrixJacobi :: Jacobi) <-
+                              liftIO $ fromSLAE initMatrix
+                          (solutionJacobi :: Vector Double) <-
+                              liftIO $ solve morphedMatrixJacobi
+
                           proceed $
                               st' & renderedMatrix .~ show initMatrix & answers .~
                               [ makeAnswer "Gauss:       " solutionGauss
                               , makeAnswer "ConjGradient:" solutionConj
-                              , makeAnswer "Relax:       " solutionRelax ])
+                              , makeAnswer "Jacobi:      " solutionJacobi
+                              , makeAnswer "Relax:       " solutionRelax
+                              ])
                  (st' ^. chosenSize)
     proceed = continue . switchEditors
 
