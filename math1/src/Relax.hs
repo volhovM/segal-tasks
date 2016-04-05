@@ -21,18 +21,22 @@ import           Numeric.LinearAlgebra.Data
 data RelaxState = RS
     { _rk :: Vector Double
     , _xk :: Vector Double
+    , _iters :: Int
     } deriving (Show)
 
 $(makeLenses ''RelaxState)
 
 eps :: Double
-eps = 1e-9 :: Double
+eps = 1e-9
 
 inf :: Double
-inf = 1e+9 :: Double
+inf = 1e+9
+
+maxIters :: Int
+maxIters = 10000
 
 rs :: RelaxState
-rs = RS (vector []) (vector [])
+rs = RS (vector []) (vector []) 0
 
 newtype RelaxSLAE = RelaxSLAE { fromRelaxSLAE :: SLAE Double } deriving (Show)
 type RelaxSolveState a = State RelaxState a
@@ -59,13 +63,23 @@ relax' om a' b' = do
     xk .= konst 0.0 n
     do
         rk .= konst 0.0 n
-        forM_ [0 .. n - 1] $ \i -> do
+        iters += 1
+        (forM_ [0 .. n - 1] $ \i -> do
             xk' <- use xk
             let newXi = (1 - om) * xk' `atIndex` i + b `atIndex` i + takeRow i a <.> xk'
             let xiDiff = substV i (newXi - xk' `atIndex` i) $ konst 0.0 n
             rk += xiDiff
-            xk += xiDiff
-        `untilM_` use rk >>= \r -> use xk >>= \x -> return $ (eps > norm_2 r) || (norm_2 x > inf)
+            xk += xiDiff)
+        `untilM_` (do
+          it <- use iters
+          if it > maxIters
+          then do
+            xk .= konst 228 n
+            return True
+          else do
+            r <- use rk
+            x <- use xk
+            return $ (eps > norm_2 r) || (norm_2 x > inf))
     use xk
 
 divideByDiag :: Matrix Double -> Vector Double -> (Matrix Double, Vector Double)
