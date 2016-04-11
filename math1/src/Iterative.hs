@@ -33,6 +33,9 @@ import           Data.IORef                     (newIORef, modifyIORef', readIOR
 eps :: Double
 eps = 1e-6
 
+maxIters :: Int
+maxIters = 10000
+
 data IterationState = IS
     { _x_k   :: Vector Double
     , _x_k1  :: Vector Double
@@ -68,7 +71,7 @@ class SolvableMatrix a Double => IterativeSolvableMatrix a where
                 it <- use iters
                 if it > maxIters
                 then do
-                  x_k1 .= konst (0/0) (mySize a)
+                  x_k1 .= konst 228 (mySize a)
                   return True
                 else do
                   x_k'  <- use x_k
@@ -97,7 +100,7 @@ instance SolvableMatrix Jacobi Double where
       return $ SLAE n jA (d #> jG)
     rowsN = jSize
     colsM = jSize
-    solve = runMethod 10000
+    solve = runMethod maxIters
 
 instance IterativeSolvableMatrix Jacobi where
     converges (Jacobi _ _ _ q _) x0 x1 = return $ ((norm_2 $ x0 `add` ((-1) * x1)) / (abs $ 1 - q)) < eps
@@ -126,7 +129,7 @@ instance SolvableMatrix Seidel Double where
 
     rowsN = zSize
     colsM = zSize
-    solve = runMethod 10000
+    solve = runMethod maxIters
 
 instance IterativeSolvableMatrix Seidel where
     converges (Seidel _ _ _ n n2 _) x0 x1 = return $ (norm_2 $ x0 `add` ((-1) * x1)) < (abs $ 1 - n) * eps / n2
@@ -238,7 +241,7 @@ instance SolvableMatrix Relax Double where
 
     rowsN = rSize
     colsM = rSize
-    solve = runMethod 10000
+    solve = runMethod maxIters
 
 instance IterativeSolvableMatrix Relax where
     converges (Relax _ n a a' b' na' nu') = converges (Seidel n a a' na' nu' b')
