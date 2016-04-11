@@ -18,7 +18,6 @@ executable math1
   main-is:             Main.hs
   other-modules:       Gauss
                      , ConjGradient
-                     , Relax
                      , Iterative
                      , Types
   -- other-extensions:
