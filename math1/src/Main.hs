@@ -7,8 +7,8 @@ module Main where
 
 import           ConjGradient               (ConjSLAE)
 import           Gauss                      (GaussMatrix)
-import           Relax                      (RelaxSLAE)
-import           Iterative                  (Jacobi, Seidel)
+--import           Relax                      (RelaxSLAE)
+import           Iterative                  (Jacobi, Seidel, Relax)
 import           Types                      (SLAE, diagMatrix, fromSLAE,
                                              goodMatrix, hilbert, sMatrix,
                                              solve)
@@ -140,7 +140,7 @@ appEvent st ev =
                               liftIO $ fromSLAE initMatrix
                           (solutionConj :: Vector Double) <-
                               liftIO $ solve morphedMatrixConj
-                          (morphedMatrixRelax :: RelaxSLAE) <-
+                          (morphedMatrixRelax :: Relax) <-
                               liftIO $ fromSLAE initMatrix
                           (solutionRelax :: Vector Double) <-
                               liftIO $ solve morphedMatrixRelax

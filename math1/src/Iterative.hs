@@ -8,7 +8,10 @@ module Iterative
     ( IterativeSolvableMatrix(..)
     , Jacobi(..)
     , Seidel(..)
+    , Relax(..)
     , jacobi
+    , seidel
+    , relax
     ) where
 
 import           Types                          (SolvableMatrix(..), SLAE(..))
@@ -143,7 +146,116 @@ instance IterativeSolvableMatrix Seidel where
 
     mySize = zSize
 
+data Relax = Relax
+    { rOm       :: !Double
+    , rSize     :: !Int
+    , rMatrixA  :: Matrix Double
+    , rMatrixA' :: Matrix Double
+    , rVecB'    :: Vector Double
+    , rNormA'   :: !Double
+    , rNormU'   :: !Double
+    }
+
+--runMethodForConvergence :: Int -> Relax -> IO Double
+--runMethodForConvergence maxIters a = do
+--  (_, state) <- runStateT solver $ zeroState $ mySize a
+--  return $ norm_2 $ _x_k state `add` ((-1) * _x_k1 state)
+--    where solver :: StateT IterationState IO ()
+--          solver = makeStep `untilM_` convergence
+--          makeStep :: StateT IterationState IO ()
+--          makeStep = do
+--            x_k'  <- use x_k1
+--            x_k1' <- liftIO $ iteration a x_k'
+--            x_k1  .= x_k1'
+--            x_k   .= x_k'
+--            iters += 1
+--          convergence :: StateT IterationState IO Bool
+--          convergence = do
+--            it <- use iters
+--            return $ it > maxIters
+
+--findOmega :: Int -> Matrix Double -> Matrix Double -> Vector Double -> Relax
+--findOmega n a a0 b0 = do
+--    let maxN = 50
+--        omEps = 0.01
+--    (l, leps) <- getEps 1.0
+--    (m, meps) <- getEps 1.5
+--    (r, reps) <- getEps 2.0
+--    do
+--        if (leps < meps || meps <= reps && leps < reps)
+--        then do
+--            modifyIORef r m
+--            modifyIORef reps meps
+--        else do
+--            modifyIORef l m
+--            modifyIORef leps meps
+--            m'
+--        getEps (modifyEps l r) >>= \(m'', eps'') -> do
+--            modifyIORef m m''
+--            modifyIORef meps eps''
+--        `whileM_` (return $ (m - l < omEps) || (r - m < omEps))
+--    if (meps < leps)
+--    then do
+--        feps <- newIORef =<< readIORef meps
+--        om <- newIORef =<< readIORef m
+--    else do
+--        feps <- newIORef =<< readIORef leps
+--        om <- newIORef =<< readIORef l
+--    if (reps < feps)
+--    then return $ placeOm om n a a0 b0
+--    else return $ placeOm r n a a0 b0
+--        where getEps :: Double -> (IORef Double, IORef Double)
+--              getEps om = do
+--                eps' <- runMethodForConvergence maxN $ placeOm om n a a0 b0
+--                return (newIORef om, newIORef eps')
+--              placeOm :: Double -> Int -> Matrix Double -> Matrix Double -> Vector Double -> Relax
+--              placeOm om n a a0 b0 = Relax om n a a' b' na' nu'
+--                where a' = scalar (-om) * a0 + ident n
+--                      b' = scalar om * b0
+--                      na' = norm_2 a'
+--                      nu' = norm_2 $ mapMatrixWithIndex (\(i, j) x -> if i < j then x else 0) a'
+--              modifyEps :: Double -> Double -> IO Double
+--              modifyEps l r = readIORef l >>= readIORef r >>= return . (*) 0.5 . (+)
+
+instance SolvableMatrix Relax Double where
+    fromSLAE (SLAE n a0 b0) = do
+        let om = 1.8
+            d = diag $ takeDiag a0
+            a = scalar (-om) * inv d <> a0 + ident n
+            b = scalar om * inv d #> b0
+            u = mapMatrixWithIndex (\(i, j) x -> if i < j then x else 0) a
+            na = norm_2 a
+            nu = norm_2 u
+        return $ Relax om n a0 a b na nu
+--        let d = diag $ takeDiag a
+--            a' = inv d <> a
+--            b' = inv d #> b
+--        return $ findOmega n a a' b'
+
+    toSLAE (Relax om n a _ b' _ _) = do
+        let d = diag $ takeDiag a
+        return $ SLAE n a (d #> b' / scalar om)
+
+    rowsN = rSize
+    colsM = rSize
+    solve = runMethod 10000
+
+instance IterativeSolvableMatrix Relax where
+    converges (Relax _ n a a' b' na' nu') = converges (Seidel n a a' na' nu' b')
+    iteration (Relax _ n a a' b' na' nu') = iteration (Seidel n a a' na' nu' b')
+    mySize = rSize
+
 jacobi :: Int -> SLAE Double -> IO (Vector Double)
 jacobi n s = do
   jac <- fromSLAE s :: IO Jacobi
   runMethod n jac
+
+seidel :: Int -> SLAE Double -> IO (Vector Double)
+seidel n s = do
+    sei <- fromSLAE s :: IO Seidel
+    runMethod n sei
+
+relax :: Int -> SLAE Double -> IO (Vector Double)
+relax n s = do
+    rel <- fromSLAE s :: IO Relax
+    runMethod n rel
