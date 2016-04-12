@@ -28,10 +28,10 @@ import           Numeric.LinearAlgebra.Devel (mapMatrixWithIndex)
 import           Types                       (SLAE (..), SolvableMatrix (..))
 
 eps :: Double
-eps = 1e-6
+eps = 1e-3
 
 maxIters :: Int
-maxIters = 10000
+maxIters = 20000
 
 data IterationState = IS
     { _x_k   :: Vector Double
