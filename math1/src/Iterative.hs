@@ -91,7 +91,6 @@ instance SolvableMatrix Jacobi Double where
           jN = norm_2 jB
           jG = (-1) * (d #> b)
       return $ Jacobi n jA jB jN jG
-
     toSLAE (Jacobi n jA _ _ jG) = do
       let d = diag $ takeDiag jA
       return $ SLAE n jA (d #> jG)
@@ -101,7 +100,7 @@ instance SolvableMatrix Jacobi Double where
 
 instance IterativeSolvableMatrix Jacobi where
     converges (Jacobi _ _ _ q _) x0 x1 =
-        return $ ((norm_2 $ x0 `add` ((-1) * x1)) / (abs $ 1 - q)) < eps
+        return $ (norm_2 (x0 `add` ((-1) * x1)) / abs (1 - q)) < eps
     iteration (Jacobi _ _ b _ g) x = return $ (b #> x) `add` g
     mySize = jSize
 

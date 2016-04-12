@@ -8,7 +8,7 @@ module Main where
 import           ConjGradient               (ConjSLAE)
 import           Gauss                      (GaussMatrix)
 --import           Relax                      (RelaxSLAE)
-import           Iterative                  (Jacobi, Seidel, Relax)
+import           Iterative                  (Jacobi, Relax, Seidel)
 import           Types                      (SLAE, diagMatrix, fromSLAE,
                                              goodMatrix, hilbert, sMatrix,
                                              solve)
@@ -77,16 +77,16 @@ drawUI st = [ui]
   where
     ui =
         vBox
-            [ (str $ concat [ "Current state: matrix type: "
+            [ str $ concat [ "Current state: matrix type: "
                             , show (st ^. chosenMatType)
                             , ", size: "
                             , show (st ^. chosenSize)
                             , ". Available matrix types: "
-                            , show allMatrixTypes] )
+                            , show allMatrixTypes]
             , hBox
-                   [ (textField "Matrix type:" 10 1 (st ^. edit1))
+                   [ textField "Matrix type:" 10 1 (st ^. edit1)
                    , str " "
-                   , (textField "Matrix size:" 10 1 (st ^. edit2))]
+                   , textField "Matrix size:" 10 1 (st ^. edit2)]
             , hBorder
             , vBox
                   [ C.center (str $ st ^. renderedMatrix)
@@ -102,7 +102,7 @@ drawUI st = [ui]
     textField t n m inner =
         str t <+>
         str " " <+>
-        (hLimit (max n $ length t) $ vLimit m $ E.renderEditor inner)
+        hLimit (max n $ length t) (vLimit m $ E.renderEditor inner)
 
 appEvent :: AppState -> V.Event -> T.EventM (T.Next AppState)
 appEvent st ev =
@@ -117,6 +117,7 @@ appEvent st ev =
         V.EvKey V.KBackTab [] -> continue $ switchEditors st
         _ -> continue =<< T.handleEventLensed st (currentEditorL st) ev
   where
+    -- Very bad formatting, but can't help it
     updateMatrixAndSolutions :: AppState -> T.EventM (T.Next AppState)
     updateMatrixAndSolutions st' =
         flip (maybe (proceed st')) (st' ^. chosenMatType) $
@@ -152,7 +153,6 @@ appEvent st ev =
                               liftIO $ fromSLAE initMatrix
                           (solutionSeidel :: Vector Double) <-
                               liftIO $ solve morphedMatrixSeidel
-
                           proceed $
                               st' & renderedMatrix .~ show initMatrix & answers .~
                               [ makeAnswer "Gauss:       " solutionGauss
