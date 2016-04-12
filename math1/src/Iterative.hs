@@ -66,13 +66,12 @@ class SolvableMatrix a Double => IterativeSolvableMatrix a where
               convergence :: StateT IterationState IO Bool
               convergence = do
                 it <- use iters
+                x_k'  <- use x_k
+                x_k1' <- use x_k1
                 if it > maxIterations
                 then do
-                  x_k1 .= konst 228 (mySize a)
                   return True
                 else do
-                  x_k'  <- use x_k
-                  x_k1' <- use x_k1
                   liftIO $ converges a x_k' x_k1'
 
 data Jacobi = Jacobi
