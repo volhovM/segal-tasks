@@ -7,7 +7,7 @@ module ConjGradient (main, ConjSLAE(..)) where
 
 import           Control.Lens               (makeLenses, use, (+=), (.=))
 import           Control.Monad.Loops        (untilM_)
-import           Control.Monad.State.Lazy   (State, runState)
+import           Control.Monad.State.Lazy   (State, evalState)
 import           Numeric.LinearAlgebra      (norm_2, ( #> ), (<.>), (<>))
 import           Numeric.LinearAlgebra.Data
 import           Types                      (SLAE (..), SolvableMatrix (..))
@@ -35,8 +35,7 @@ instance SolvableMatrix ConjSLAE Double where
     colsM = sSize . fromConjSLAE
     solve f =
         return $
-        fst $
-        runState
+        evalState
             (conjgrad (sMatrix $ fromConjSLAE f) (sVector $ fromConjSLAE f))
             cs
 
@@ -58,16 +57,17 @@ conjgrad a' b' = do
     xk .= (konst 0 (size b) :: Vector Double)
     rk .= b
     pk .= b
-    (do pk' <- use pk
-        rk' <- use rk
-        let apk = a #> pk'
-        let ak = rk' <.> rk' / pk' <.> apk
-        let rk'' = rk' - scalar ak * apk
-        let bk = rk'' <.> rk'' / rk' <.> rk'
-        xk += scalar ak * pk'
-        rk .= rk''
-        pk .= rk'' + scalar bk * pk'
-        ) `untilM_` use rk >>= return . (>) eps . norm_2
+    let proceed = do
+            pk' <- use pk
+            rk' <- use rk
+            let apk = a #> pk'
+            let ak = rk' <.> rk' / pk' <.> apk
+            let rk'' = rk' - scalar ak * apk
+            let bk = rk'' <.> rk'' / rk' <.> rk'
+            xk += scalar ak * pk'
+            rk .= rk''
+            pk .= rk'' + scalar bk * pk'
+    proceed `untilM_` ((>) eps . norm_2 <$> use rk)
     use xk
 
 main :: IO ()
@@ -75,6 +75,6 @@ main = do
     let (a, b) = test_good 10
     let (a', b') = test_hilbert 10
     let (a'', b'') = test_dima_n
-    let x = fst $ runState (conjgrad a b) cs
-    putStrLn $ show x
+    let x = evalState (conjgrad a b) cs
+    print x
     undefined a' a'' b' b''

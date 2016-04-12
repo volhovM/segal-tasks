@@ -45,7 +45,7 @@ instance SolvableMatrix GaussMatrix Double where
       when (rowOffset /= 0 || colOffset /= 0) $ error "gauss: offset"
 
       let sSize = nrows
-      sMatrix ← matrix sSize <$> concat <$> matrixToList m
+      sMatrix ← matrix sSize . concat <$> matrixToList m
       sVector ← vector <$> forM [0..sSize-1] (\i → get m i sSize)
 
       return SLAE{..}
