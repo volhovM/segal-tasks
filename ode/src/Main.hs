@@ -38,7 +38,8 @@ makeGraphs = do
 -}
 
 --currentPlot :: Method → Pars → EC (Layout Double Double) ()
-currentPlot m p = return $ graph 5000 m p
+currentPlot m p = return $ graph k m p
+  where k = round $ 50 / δt p
 
 main :: IO ()
 main = do
@@ -52,8 +53,8 @@ main = do
   button3     ← buttonNewWithLabel "Runge-Kutta"
   button4     ← buttonNewWithLabel "Adams"
   buttonTrid  ← buttonNewWithLabel "3d"
-  adj_r       ← adjustmentNew 0.0 0.0 30.0 0.1 1.0 0.0
-  adj_x₀      ← adjustmentNew 0.0 0.0 0.1 0.001 1.0 0.0
+  adj_r       ← adjustmentNew 0.0 0.0 30.0 0.01 1.0 0.0
+  adj_x₀      ← adjustmentNew 0.0 0.005 0.1 0.1 0.1 0.0
   scroller_r  ← hScaleNew adj_r
   scroller_x₀ ← hScaleNew adj_x₀
 
@@ -82,7 +83,7 @@ main = do
   boxPackStart hboxpanel buttonTrid PackNatural 0
 
   set scroller_r  [scaleDigits := 2]
-  set scroller_x₀ [scaleDigits := 2]
+  set scroller_x₀ [scaleDigits := 3]
   boxPackStart hboxpanel scroller_r PackGrow 0
   boxPackStart hboxpanel scroller_x₀ PackGrow 0
 
