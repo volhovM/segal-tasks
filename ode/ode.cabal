@@ -15,13 +15,15 @@ cabal-version:       >=1.10
 executable ode
   hs-source-dirs:      src
   main-is:             Main.hs
-  other-modules:       Solve
-  build-depends:       base
-                     , Chart >= 1.5
-                     , Chart-gtk >= 1.5
+  other-modules:       Solve, EasyPlot
+  build-depends:       Chart >= 1.5
                      , Chart-cairo
-                     , easyplot
+                     , Chart-gtk >= 1.5
+                     , base
+                     , process >= 1.4.2.0
+                     --, easyplot
                      , gtk >= 0.13
+                     , unix >= 2.7.2.0
   pkgconfig-depends:   zlib
   default-language:    Haskell2010
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall -fno-warn-orphans

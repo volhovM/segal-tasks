@@ -28,7 +28,7 @@ data Pars = Pars { r, δt :: Double
                  , v₀ :: Vec
                  }
 
-data Method = ImplicitEuler | ExplicitEuler | RungeKutta | Adams
+data Method = ImplicitEuler | ExplicitEuler | RungeKutta | Adams deriving (Show, Read)
 
 -- _, _ ↦ [(t₀,v₀), (t₁,v₁), (t₂,v₂), …]
 solve :: Method → Pars → [(Double, Vec)]
