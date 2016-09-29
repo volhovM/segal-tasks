@@ -15,6 +15,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
+#resolver: lts-6.7
 resolver: lts-7.0
 
 # User packages to be built.
@@ -39,7 +40,8 @@ packages:
 - '.'
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
-extra-deps: [easyplot-1.0, Chart-gtk-1.8]
+##########extra-deps: [easyplot-1.0, Chart-gtk-1.6]
+extra-deps: [easyplot-1.0]
 
 # Override default flag values for local packages and extra-deps
 flags: {}
@@ -49,14 +51,7 @@ extra-package-dbs: []
 
 nix:
     enable: false
-    packages: [ zlib.dev
-              , zlib.out
-              , git
-              , glib-tested
-              , pkgconfig
-              , pcre
-              , cairo
-              ]
+    shell-file: shell.nix  
 
 # Control whether we use the GHC we find on the path
 # system-ghc: true
@@ -70,11 +65,11 @@ nix:
 # arch: x86_64
 #
 # Extra directories used by stack for building
-extra-include-dirs:
-  - /home/flyingleafe/Downloads/zlib-1.2.7
-
-extra-lib-dirs:
-  - /home/flyingleafe/Downloads/zlib-1.2.7
+######## extra-include-dirs:
+########   - /home/flyingleafe/Downloads/zlib-1.2.7
+######## 
+######## extra-lib-dirs:
+########   - /home/flyingleafe/Downloads/zlib-1.2.7
 
 #
 # Allow a newer minor version of GHC than the snapshot specifies

@@ -4,15 +4,18 @@ import           Solve
 
 import           Control.Monad                          (void)
 import           Graphics.EasyPlot                      hiding (plot)
-import           Graphics.Rendering.Chart.Backend.Cairo
-import           Graphics.Rendering.Chart.Easy          (execEC)
+import           Graphics.Rendering.Chart.Backend.Cairo hiding (Color)
+import           Graphics.Rendering.Chart.Easy          (EC, def, execEC, line,
+                                                         plot)
 import           Graphics.Rendering.Chart.Gtk           (updateCanvas)
 import           Graphics.Rendering.Chart.Renderable    (toRenderable)
-import           Graphics.UI.Gtk
+import           Graphics.UI.Gtk                        hiding (Color)
+
+import           Control.Monad.IO.Class                 (liftIO)
 
 
 -- graph of the x coordinate
-graph :: Int → Method → Pars → EC (Layout Double Double) ()
+--graph :: Int → Method → Pars → EC (Layout Double Double) ()
 graph steps method pars = plot (line "" [ppoints])
   where
     ppoints = take steps $ map (fmap getx) $ solve method pars
@@ -36,6 +39,9 @@ makeGraphs = do
   toFile def "2.implicit-euler.png" (graph 10000 ImplicitEuler myPars)
   toFile def "3.runge-kutta.png" (graph 10000 RungeKutta myPars)
   toFile def "4.adams.png" (graph 10000 Adams myPars)
+
+--currentPlot :: Method → Pars → EC (Layout Double Double) ()
+currentPlot m p = return $ graph 5000 m p
 
 main :: IO ()
 main = do
@@ -95,18 +101,22 @@ main = do
       then return ()
       else do
         r  ← adjustmentGetValue adj_r
-        x₀ ← adjustmentGetValue adj_x₀
-        drawPic . getPic =<< currentPlot (Config r x₀) panellabel
+        δt ← adjustmentGetValue adj_x₀
+        drawPic . getPic =<< currentPlot Adams (Pars r δt (0,0,0))
+        -- TODO: add v₀ parameter
+        return ()
+{-
     dumpToFile !name !dtype !label = do
       labelSetLabel panellabel label
       putStrLn $ "Calculating..., state " ++ label
       let !renderable = getPic $! dtype
       putStrLn "To file..."
-      renderableToFile (FileOptions (1200, 600) PNG) name renderable
+      --renderableToFile (FileOptions (1200, 600) PNG) name renderable
       putStrLn "Drawing on screen..."
       --drawPic renderable
       putStrLn "Done"
       return $! ()
+-}
 
 
   onValueChanged adj_r  $ refreshPic False
@@ -114,8 +124,6 @@ main = do
 
   onClicked button1 $ labelSetLabel panellabel "Current: SNCE" >> refreshPic True
   onClicked button2 $ labelSetLabel panellabel "Current: VISU" >> refreshPic True
-  onClicked button3 $ dumpToFile bifuFileName bifu "Current: BIFU"
-  onClicked button4 drawAndSaveBitmap
 
   window `on` configureEvent $ do
     (w, h) ← eventSize

@@ -19,6 +19,7 @@ executable ode
   build-depends:       base
                      , Chart >= 1.5
                      , Chart-gtk >= 1.5
+                     , Chart-cairo
                      , easyplot
                      , gtk >= 0.13
   pkgconfig-depends:   zlib
@@ -26,3 +27,4 @@ executable ode
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall -fno-warn-orphans
   default-extensions:  RecordWildCards
                      , UnicodeSyntax
+                     , BangPatterns
