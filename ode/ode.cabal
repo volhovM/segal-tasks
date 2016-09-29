@@ -24,7 +24,6 @@ executable ode
                      --, easyplot
                      , gtk >= 0.13
                      , unix >= 2.7.2.0
-  pkgconfig-depends:   zlib
   default-language:    Haskell2010
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall -fno-warn-orphans
   default-extensions:  RecordWildCards
