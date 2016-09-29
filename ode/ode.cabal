@@ -1,0 +1,26 @@
+name:                ode
+version:             0.1.0.0
+-- synopsis:            Initial project template from stack
+-- description:         Please see README.md
+-- homepage:            https://github.com/githubuser/ode1#readme
+license:             GPL-3
+license-file:        LICENSE
+author:              Evgeny Vinogradov
+maintainer:          zhenyavinogradov@gmail.com
+category:            Math
+build-type:          Simple
+-- extra-source-files:
+cabal-version:       >=1.10
+
+executable ode
+  hs-source-dirs:      src
+  main-is:             Main.hs
+  other-modules:       Solve
+  build-depends:       base
+                     , Chart
+                     , Chart-cairo
+                     , easyplot
+  default-language:    Haskell2010
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall -fno-warn-orphans
+  default-extensions:  RecordWildCards
+                     , UnicodeSyntax
