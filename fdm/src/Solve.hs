@@ -37,8 +37,9 @@ r = κΔt/Δx²
 -}
 
 data Pars = Pars
-    { u, kappa               :: Double
-    , dx, dt                 :: Double
+    --{ u, kappa               :: Double
+    { s, r                   :: Double
+    , dx                     :: Double
     , v0                     :: V.Vector Double
     , a0, b0, c0, a1, b1, c1 :: Double
     }
@@ -49,9 +50,9 @@ solve method Pars{..} = vall [v0]
     kk :: Int
     kk = V.length v0 - 1
 
-    s, r :: Double
-    s = u*dt / dx
-    r = kappa*dt / dx**2
+    -- s, r :: Double
+    -- s = u*dt / dx
+    -- r = kappa*dt / dx**2
 
     -- [vₙ, vₙ₋₁, vₙ₋₂, …, v₀] ↦ [vₙ, vₙ₊₁, vₙ₊₂, …]
     vall :: [V.Vector Double] -> [V.Vector Double]
