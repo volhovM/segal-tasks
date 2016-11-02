@@ -12,6 +12,8 @@ import           Graphics.Rendering.Chart.Easy          (EC, Layout, black, def,
                                                          scaledAxis, setColors,
                                                          withOpacity, (.=))
 
+import           Graphics.UI.Gtk                        (initGUI, mainGUI, widgetShowAll,
+                                                         windowNew)
 import           Solve                                  (Method (..), Pars (..), solve)
 
 (//) :: Int -> Int -> Double
@@ -55,4 +57,8 @@ mm :: IO ()
 mm = toFile def "some.png" graph
 
 main :: IO ()
-main = mm
+main = do
+  _ <- initGUI
+  window <- windowNew
+  widgetShowAll window
+  mainGUI

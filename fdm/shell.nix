@@ -13,5 +13,6 @@ in
        zlib
        cairo
        pango
+       gnome2.gtk
      ];
    }
