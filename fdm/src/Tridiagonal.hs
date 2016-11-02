@@ -4,7 +4,7 @@ import           Control.Lens (view, _1, _2, _3, _4)
 import qualified Data.Vector  as V
 
 solve :: Int -> (Int -> (Double, Double, Double, Double)) -> V.Vector Double
-solve n f = generate n x
+solve n f = V.generate n x
   where
     c', d', x :: Int -> Double
     x i

@@ -159,8 +159,8 @@ main = do
         showPic (graph (round it) pars Leapfrog) area1
         showPic (graph (round it) pars ExplicitUpstream) area2
         showPic (graph (round it) pars ExplicitDownstream) area3
-        --showPic (graph pars ImplicitUpstream) area4
-        --showPic (graph pars ImplicitDownstream) area5
+        showPic (graph (round it) pars ImplicitUpstream) area4
+        showPic (graph (round it) pars ImplicitDownstream) area5
 
     onValueChanged adj_s  $ refreshPic
     onValueChanged adj_r $ refreshPic
