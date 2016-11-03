@@ -83,5 +83,5 @@ solve method Pars{..} = vall [v0]
     implicitly f =
         Tridiagonal.solve (kk+1) $ \k ->
         if | k == 0  -> (error "no first a", a0-b0/dx, b0/dx, c0)
-           | k == kk -> (a1+b1/dx, -b1/dx, error "no last c", c1)
+           | k == kk -> (-b1/dx, a1+b1/dx, error "no last c", c1)
            | True    -> f k
