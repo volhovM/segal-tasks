@@ -177,7 +177,7 @@ main = do
       liftIO refreshPic
       return False
 
-    timeoutAdd (const True <$> refreshPic) 100
+    timeoutAdd (const True <$> refreshPic) 1000
 
     set window
         [ containerChild := table
