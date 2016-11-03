@@ -5,12 +5,13 @@ import qualified Data.Vector as V
 
 import qualified Tridiagonal (solve)
 
-data Method = ExplicitUpstream
-            | ExplicitDownstream
-            | Leapfrog
-            | ImplicitUpstream
-            | ImplicitDownstream
-            deriving (Eq)
+data Method
+    = ExplicitUpstream
+    | ExplicitDownstream
+    | Leapfrog
+    | ImplicitUpstream
+    | ImplicitDownstream
+    deriving (Eq)
 
 instance Show Method where
   show ExplicitUpstream   = "явная против потока"
@@ -61,9 +62,12 @@ solve method Pars{..} = vall [v0]
     -- [vₙ, vₙ₋₁, vₙ₋₂, …, v₀] ↦ vₙ₊₁
     vnext :: Method -> [V.Vector Double] -> V.Vector Double
     vnext _                  []         = error "impossible"
-    vnext ExplicitUpstream   (vn:_)     = explicitly $ \k -> (s+r) * vn!(k-1) + (1-s-2*r) * vn!k + r * vn!(k+1)
-    vnext ExplicitDownstream (vn:_)     = explicitly $ \k -> r * vn!(k-1) + (1+s-2*r) * vn!k + (-s+r) * vn!(k+1)
-    vnext Leapfrog           (vn:vn1:_) = explicitly $ \k -> vn1!k + (s+2*r) * vn!(k-1) + (-4*r) * vn!k + (-s+2*r) * vn!(k+1)
+    vnext ExplicitUpstream   (vn:_)     =
+        explicitly $ \k -> (s+r) * vn!(k-1) + (1-s-2*r) * vn!k + r * vn!(k+1)
+    vnext ExplicitDownstream (vn:_)     =
+        explicitly $ \k -> r * vn!(k-1) + (1+s-2*r) * vn!k + (-s+r) * vn!(k+1)
+    vnext Leapfrog           (vn:vn1:_) =
+        explicitly $ \k -> vn1!k + (s+2*r) * vn!(k-1) + (-4*r) * vn!k + (-s+2*r) * vn!(k+1)
     vnext Leapfrog           vs         = vnext ExplicitUpstream vs -- fall back for the first step
     vnext ImplicitUpstream   (vn:_)     = implicitly $ \k -> (-s-r, 1+s+2*r, -r, vn!k)
     vnext ImplicitDownstream (vn:_)     = implicitly $ \k -> (-r, 1-s+2*r, s-r, vn!k)

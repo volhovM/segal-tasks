@@ -1,27 +1,30 @@
-module Main where
-import           Control.Monad                          (forM_, void, when)
-import           Control.Monad.IO.Class                 (liftIO)
-import qualified Data.Vector                            as V
-import           Graphics.Rendering.Chart.Backend.Cairo (toFile)
-import           Graphics.Rendering.Chart.Easy          (EC, Layout, black, def, execEC,
-                                                         laxis_generate, layout_title,
-                                                         layout_x_axis, liftEC, line, line_color,
-                                                         line_width, opaque, plot, plot_lines_style,
-                                                         plot_lines_values, red, scaledAxis,
-                                                         setColors, withOpacity, (.=))
-import           Graphics.Rendering.Chart.Gtk           (updateCanvas)
-import           Graphics.Rendering.Chart.Renderable    (toRenderable)
+{-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 
-import           Graphics.UI.Gtk                        hiding (Layout)
-import           Numeric                                (showFFloat)
+module Main (main) where
 
-import           Solve                                  (Method (..), Pars (..), solve)
+import           Control.Monad                       (forM_, void)
+import           Control.Monad.IO.Class              (liftIO)
+import qualified Data.Vector                         as V
+import           Graphics.Rendering.Chart.Easy       (EC, Layout, black, def, execEC,
+                                                      laxis_generate, layout_title,
+                                                      layout_x_axis, liftEC, line,
+                                                      line_color, line_width, opaque,
+                                                      plot, plot_lines_style,
+                                                      plot_lines_values, red, scaledAxis,
+                                                      setColors, withOpacity, (.=))
+import           Graphics.Rendering.Chart.Gtk        (updateCanvas)
+import           Graphics.Rendering.Chart.Renderable (toRenderable)
+
+import           Graphics.UI.Gtk                     hiding (Layout)
+import           Numeric                             (showFFloat)
+
+import           Solve                               (Method (..), Pars (..), solve)
 
 (//) :: Int -> Int -> Double
 n // m = fromIntegral n / fromIntegral m
 
 fade :: [Double]
-fade = map (max 0) $ [0.3,0.28..]
+fade = map (max 0) [0.3,0.28..]
 
 graph :: Int -> Pars -> Method -> EC (Layout Double Double) ()
 graph it pars method = do
@@ -162,16 +165,16 @@ main = do
         showPic (graph (round it) pars ImplicitUpstream) area4
         showPic (graph (round it) pars ImplicitDownstream) area5
 
-    onValueChanged adj_s  $ refreshPic
-    onValueChanged adj_r $ refreshPic
-    onValueChanged adj_n  $ refreshPic
-    onValueChanged adj_it $ refreshPic
-    onToggled toggleCnst $ refreshPic
+    onValueChanged adj_s refreshPic
+    onValueChanged adj_r refreshPic
+    onValueChanged adj_n refreshPic
+    onValueChanged adj_it refreshPic
+    onToggled toggleCnst refreshPic
 
     window `on` configureEvent $ do
       (w, h) <- eventSize
       liftIO . putStrLn $ "Resizing: " ++ show w ++ " " ++ show h
-      liftIO $ refreshPic
+      liftIO refreshPic
       return False
 
     timeoutAdd (const True <$> refreshPic) 100
