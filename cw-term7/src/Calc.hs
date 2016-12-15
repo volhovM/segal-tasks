@@ -1,4 +1,3 @@
-
 import           Control.Monad         (forM_, when)
 import           Data.Bool             (bool)
 import qualified Data.ByteString       as B
@@ -53,7 +52,7 @@ showPars b id Pars{..} =
 main :: IO ()
 main = do
   let n = 1000
-  let precalc = False
+  let precalc = True
 
   if precalc then
     forM_ (αVals <×> (kkVals <×> ddVals)) $ \(α,(kk,dd)) → do
@@ -63,6 +62,8 @@ main = do
 
       exists ← doesFileExist (dir ++ "/pars") >>= \case
         True → do
+--          createDirectoryIfMissing True dir
+--          pure False
           pure True
           -- exPars ← read <$> readFile (dir ++ "/pars")
           -- pure (wpars pars == exPars)
@@ -72,7 +73,7 @@ main = do
 
       print ps
 
-      if exists || α /= 1.0 then
+      if exists || α < 1 then
         putStrLn "exists"
       else do
         (axxs,atts) ← runMethod pars n (nn pars `div` n)

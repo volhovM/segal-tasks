@@ -75,7 +75,11 @@ wpars Pars{..} = (case method of {Explicit → (-1); Implicit n → n},dz,ii,dt,
 
 αVals = [0.95, 1.0, 2.0, 3.0]
 kkVals = [1.6e6, 5e6, 1e7, 1e8]
-ddVals = [8e-12, 1e-11, 1e-10, 1e-9, 9e-8, 7.91e-8]
+ddVals = [8e-12, 1e-11, 1e-10, 1e-9, 1e-8, 7.91e-8, 9e-8]
+
+--αVals = [2.0]
+--kkVals = [1e8]
+--ddVals = [8e-12, 1e-11, 1e-10]
 
 pdir :: (Double, Double, Double) → FilePath
 pdir ps = "data/" ++ show ps

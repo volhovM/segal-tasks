@@ -143,15 +143,15 @@ pars0 = Pars{..}
     --α = 2
     --α = 3
 
-    kk = 1.6e6
+    --kk = 1.6e6
     --kk = 5e6
-    --kk = 1e7
+    kk = 1e7
     --kk = 1e8
 
-    dd = 8e-12
+    --dd = 8e-12
     --dd = 8e-10
     --dd = 2e-10
-    --dd = 1e-9
+    dd = 1e-9
     --dd = λ / (ρ*cc)
 
     --ee = 8e4
@@ -179,7 +179,7 @@ pars0 = Pars{..}
     --dz = δw * 0.1
     --dt = dz/u * 0.0005
     --dt = dz/u * 0.001
-    dt = dz/u * 0.005
+    dt = dz/u * 0.001
     --dt = dz/u * 0.01
     --dt = dz/u * 0.05
     --dt = dz/u * 0.1
@@ -241,8 +241,8 @@ ppars (α,kk,dd) = Pars{..}
       where kk' = 1.6e6
             ee' = 8e4
 
-    dz = δw * 0.5
-    dt = dz/u * 0.0005
+    dz = δw * 0.9
+    dt = dz/u * 0.001
     ii = round (3e-2 / dz)
     nn = round $ h/(u*dt) * (bool α 5 (α == 3)) / (bool 1 1.2 (α == 1))
 
