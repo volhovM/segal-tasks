@@ -52,7 +52,7 @@ showPars b id Pars{..} =
 main :: IO ()
 main = do
   let n = 1000
-  let precalc = True
+  let precalc = False
 
   if precalc then
     forM_ (αVals <×> (kkVals <×> ddVals)) $ \(α,(kk,dd)) → do

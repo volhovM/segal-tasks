@@ -133,8 +133,8 @@ initial Pars{ii} =
 pars0 :: Pars
 pars0 = Pars{..}
   where
-    --method = Implicit 2
-    method = Explicit
+    method = Implicit 2
+    --method = Explicit
 
     --α = 0.5
     --α = 0.8
@@ -150,9 +150,9 @@ pars0 = Pars{..}
 
     --dd = 8e-12
     --dd = 8e-10
-    --dd = 2e-10
-    dd = 1e-9
-    --dd = λ / (ρ*cc)
+    --dd = 1e-10
+    --dd = 1e-9
+    dd = λ / (ρ*cc)
 
     --ee = 8e4
     --ee = 9e4
@@ -179,7 +179,7 @@ pars0 = Pars{..}
     --dz = δw * 0.1
     --dt = dz/u * 0.0005
     --dt = dz/u * 0.001
-    dt = dz/u * 0.001
+    dt = dz/u * 0.01
     --dt = dz/u * 0.01
     --dt = dz/u * 0.05
     --dt = dz/u * 0.1
