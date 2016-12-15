@@ -15,4 +15,5 @@ in
        pango
        gnome2.gtk
      ];
+     LANG = "en_US.UTF-8";
    }
